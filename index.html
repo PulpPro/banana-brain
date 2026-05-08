@@ -3,168 +3,467 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pulp Pro | AI</title>
+    <title>Pulp Pro | Banana Brain</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
     <style>
-        :root { --bg: #000; --accent: #f9d71c; }
-        body { background: var(--bg); color: #fff; font-family: -apple-system; margin: 0; overflow: hidden; position: fixed; width: 100%; height: 100%; }
-        #video-container { position: relative; width: 100vw; height: 40vh; background: #111; }
-        #webcam { width: 100%; height: 100%; object-fit: cover; background: #000; }
-        #init-overlay { position: absolute; z-index: 100; background: #000; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .controls { height: 60vh; padding: 10px; background: #0a0a0a; display: flex; flex-direction: column; }
-        #train-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; flex-grow: 1; }
-        .stage-btn { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; color: #fff; font-size: 14px; padding: 10px 0; }
-        .count-badge { display: block; font-size: 10px; color: var(--accent); }
-        .action-bar { display: flex; gap: 8px; padding-bottom: 20px; }
-        .btn { flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: bold; }
+        :root {
+            --bg: #000;
+            --card: #111;
+            --border: #222;
+            --accent: #f9d71c;
+            --lime: #a6e22e;
+            --red: #ff4d4d;
+            --text-dim: #666;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg); color: #fff;
+            font-family: -apple-system, sans-serif;
+            height: 100dvh; display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* VIDEO */
+        #video-container {
+            position: relative; width: 100%;
+            height: 38vh; background: #111; flex-shrink: 0;
+        }
+        #webcam {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+        }
+        #crosshair {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px; height: 80px;
+            border: 2px solid var(--accent);
+            border-radius: 12px; pointer-events: none;
+        }
+        #prediction-bar {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: rgba(0,0,0,0.7); padding: 8px 14px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        #prediction-label {
+            font-size: 0.75rem; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 2px; color: var(--accent);
+        }
+        #confidence-bar-wrap {
+            flex: 1; margin: 0 12px; height: 4px;
+            background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;
+        }
+        #confidence-bar {
+            height: 100%; background: var(--accent);
+            border-radius: 4px; width: 0%; transition: width 0.2s;
+        }
+        #confidence-pct {
+            font-size: 0.6rem; font-weight: 900; color: var(--text-dim);
+        }
+
+        /* INIT OVERLAY */
+        #init-overlay {
+            position: absolute; inset: 0; z-index: 100;
+            background: #000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 12px;
+            cursor: pointer;
+        }
+        #init-overlay.hidden { display: none; }
+        #init-icon { font-size: 3rem; color: var(--accent); }
+        #init-title { font-size: 1rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; }
+        #init-sub { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        #init-progress {
+            font-size: 0.55rem; color: var(--lime);
+            text-transform: uppercase; letter-spacing: 1px;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* CONTROLS */
+        .controls {
+            flex: 1; padding: 10px 10px 0; background: #0a0a0a;
+            display: flex; flex-direction: column; gap: 8px; overflow: hidden;
+        }
+
+        /* STATUS */
+        #status-msg {
+            text-align: center; font-size: 0.55rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 2px; color: var(--text-dim);
+            padding: 4px;
+        }
+        #status-msg.online { color: var(--lime); }
+        #status-msg.error { color: var(--red); }
+
+        /* STAGE GRID */
+        #train-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+            flex: 1;
+        }
+        .stage-btn {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 10px; color: #fff; font-size: 0.85rem;
+            font-weight: 900; padding: 0; cursor: pointer;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 3px;
+            transition: border-color 0.15s, background 0.15s;
+            min-height: 52px;
+        }
+        .stage-btn:active { background: rgba(249,215,28,0.1); border-color: var(--accent); }
+        .stage-btn.has-data { border-color: rgba(249,215,28,0.4); }
+        .count-badge {
+            font-size: 0.5rem; color: var(--accent); font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        /* ACTION BAR */
+        .action-bar {
+            display: flex; gap: 8px; padding-bottom: env(safe-area-inset-bottom, 10px);
+            padding-bottom: max(env(safe-area-inset-bottom), 10px);
+        }
+        .btn {
+            flex: 1; padding: 14px; border-radius: 12px; border: none;
+            font-weight: 900; font-size: 0.75rem; text-transform: uppercase;
+            letter-spacing: 1px; cursor: pointer; transition: opacity 0.2s;
+        }
+        .btn:active { opacity: 0.7; }
+        #undo-btn { background: var(--card); color: #fff; border: 1px solid var(--border); }
+        #sync-btn { background: var(--accent); color: #000; }
+        #sync-btn.loading { opacity: 0.6; pointer-events: none; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
     </style>
 </head>
 <body>
 
-    <div id="video-container">
-        <div id="init-overlay" onclick="emergencyStart()">
-            <i class="bi bi-camera-fill" style="font-size: 50px; color: var(--accent);"></i>
-            <h2 style="color:var(--accent);">FORCE START CAMERA</h2>
-            <p style="opacity:0.7;">Tap to bypass iOS restrictions</p>
-        </div>
-        <video id="webcam" autoplay playsinline muted></video>
+<div id="video-container">
+    <div id="init-overlay" onclick="startApp()">
+        <i class="bi bi-camera-fill" id="init-icon"></i>
+        <div id="init-title">BANANA BRAIN</div>
+        <div id="init-sub">Tap to start camera</div>
+        <div id="init-progress" style="display:none;">Loading AI model...</div>
+    </div>
+    <video id="webcam" autoplay playsinline muted></video>
+    <div id="crosshair"></div>
+    <div id="prediction-bar" style="display:none;">
+        <div id="prediction-label">—</div>
+        <div id="confidence-bar-wrap"><div id="confidence-bar"></div></div>
+        <div id="confidence-pct">—</div>
+    </div>
+</div>
+
+<div class="controls">
+    <div id="status-msg">TAP CAMERA TO START</div>
+
+    <div id="train-grid">
+        <button class="stage-btn" id="btn-1"   onclick="addSample('1')">  1   <span class="count-badge" id="c1">0</span></button>
+        <button class="stage-btn" id="btn-1.5" onclick="addSample('1.5')">1.5 <span class="count-badge" id="c1.5">0</span></button>
+        <button class="stage-btn" id="btn-2"   onclick="addSample('2')">  2   <span class="count-badge" id="c2">0</span></button>
+        <button class="stage-btn" id="btn-2.5" onclick="addSample('2.5')">2.5 <span class="count-badge" id="c2.5">0</span></button>
+        <button class="stage-btn" id="btn-3"   onclick="addSample('3')">  3   <span class="count-badge" id="c3">0</span></button>
+        <button class="stage-btn" id="btn-3.5" onclick="addSample('3.5')">3.5 <span class="count-badge" id="c3.5">0</span></button>
+        <button class="stage-btn" id="btn-4"   onclick="addSample('4')">  4   <span class="count-badge" id="c4">0</span></button>
+        <button class="stage-btn" id="btn-4.5" onclick="addSample('4.5')">4.5 <span class="count-badge" id="c4.5">0</span></button>
+        <button class="stage-btn" id="btn-5"   onclick="addSample('5')">  5   <span class="count-badge" id="c5">0</span></button>
+        <button class="stage-btn" id="btn-5.5" onclick="addSample('5.5')">5.5 <span class="count-badge" id="c5.5">0</span></button>
+        <button class="stage-btn" id="btn-6"   onclick="addSample('6')">  6   <span class="count-badge" id="c6">0</span></button>
+        <button class="stage-btn" style="background:#1a0000; border-color:#330000;" onclick="confirmClear()">
+            CLEAR<span class="count-badge" style="color:var(--red);">ALL</span>
+        </button>
     </div>
 
-    <div class="controls">
-        <div id="status-msg" style="text-align:center; font-size:10px; color:#888; margin-bottom:5px;">LENS READY</div>
-        
-        <div id="train-grid">
-            <button class="stage-btn" onclick="addSample('1')">1 <span class="count-badge" id="c1">0</span></button>
-            <button class="stage-btn" onclick="addSample('1.5')">1.5 <span class="count-badge" id="c1.5">0</span></button>
-            <button class="stage-btn" onclick="addSample('2')">2 <span class="count-badge" id="c2">0</span></button>
-            <button class="stage-btn" onclick="addSample('2.5')">2.5 <span class="count-badge" id="c2.5">0</span></button>
-            <button class="stage-btn" onclick="addSample('3')">3 <span class="count-badge" id="c3">0</span></button>
-            <button class="stage-btn" onclick="addSample('3.5')">3.5 <span class="count-badge" id="c3.5">0</span></button>
-            <button class="stage-btn" onclick="addSample('4')">4 <span class="count-badge" id="c4">0</span></button>
-            <button class="stage-btn" onclick="addSample('4.5')">4.5 <span class="count-badge" id="c4.5">0</span></button>
-            <button class="stage-btn" onclick="addSample('5')">5 <span class="count-badge" id="c5">0</span></button>
-            <button class="stage-btn" onclick="addSample('5.5')">5.5 <span class="count-badge" id="c5.5">0</span></button>
-            <button class="stage-btn" onclick="addSample('6')">6 <span class="count-badge" id="c6">0</span></button>
-            <button class="stage-btn" onclick="location.reload()" style="background:#331111;">RELOAD</button>
-        </div>
-
-        <div class="action-bar">
-            <button class="btn" style="background:#222; color:#fff;" onclick="undoLast()">UNDO</button>
-            <button class="btn" id="sync-btn" style="background:#fff; color:#000;" onclick="syncToGithub()">SYNC CLOUD</button>
-        </div>
+    <div class="action-bar">
+        <button class="btn" id="undo-btn" onclick="undoLast()">↩ Undo Last</button>
+        <button class="btn" id="sync-btn" onclick="syncToGithub()">☁ Sync Cloud</button>
     </div>
+</div>
 
-    <script>
-        const GH_TOKEN = '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'; 
-        const GH_REPO = 'PulpPro/banana-brain'; 
-        const GH_PATH = 'scanner/banana_brain.json';
-        
-        let classifier, mobilenet;
-        const webcamElement = document.getElementById('webcam');
-        const counts = {"1":0,"1.5":0,"2":0,"2.5":0,"3":0,"3.5":0,"4":0,"4.5":0,"5":0,"5.5":0,"6":0};
-        let lastLabel = null;
+<script>
+    // ── CONFIG ──────────────────────────────────────────────
+    // IMPORTANT: Replace with your new token after revoking the old one
+    const GH_TOKEN = 'YOUR_NEW_TOKEN_HERE';
+    const GH_REPO  = 'PulpPro/banana-brain';
+    const GH_PATH  = 'scanner/banana_brain.json';
+    // ────────────────────────────────────────────────────────
 
-        async function emergencyStart() {
-            document.getElementById('status-msg').innerText = "POWERING ON...";
+    const LABELS = ['1','1.5','2','2.5','3','3.5','4','4.5','5','5.5','6'];
+
+    let classifier  = null;
+    let mobileNetModel = null;  // Fixed: renamed from 'mobilenet' to avoid conflict
+    let webcamEl    = document.getElementById('webcam');
+    let isReady     = false;
+    let isPredicting = false;
+
+    // Per-label sample history for proper undo (stores activation tensors)
+    const sampleHistory = {};
+    LABELS.forEach(l => sampleHistory[l] = []);
+    const counts = {};
+    LABELS.forEach(l => counts[l] = 0);
+
+    // ── START ────────────────────────────────────────────────
+    async function startApp() {
+        const overlay = document.getElementById('init-overlay');
+        const progress = document.getElementById('init-progress');
+        const sub = document.getElementById('init-sub');
+
+        sub.style.display = 'none';
+        progress.style.display = 'block';
+        progress.innerText = 'Requesting camera...';
+
+        try {
+            // Step 1 — camera
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: { ideal: 'environment' } },
+                audio: false
+            });
+            webcamEl.srcObject = stream;
+            await new Promise(resolve => { webcamEl.onloadedmetadata = resolve; });
+            webcamEl.play();
+
+            progress.innerText = 'Loading AI model (this takes ~10s)...';
+
+            // Step 2 — load models
             classifier = knnClassifier.create();
-            mobilenet = await mobilenet.load();
+            mobileNetModel = await mobilenet.load();
 
-            try {
-                // Try the simplest possible camera request for iOS
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: true, 
-                    audio: false 
-                });
-                
-                webcamElement.srcObject = stream;
-                // Force play command
-                webcamElement.onloadedmetadata = () => {
-                    webcamElement.play();
-                    document.getElementById('init-overlay').style.display = 'none';
-                    document.getElementById('status-msg').innerText = "AI ONLINE";
-                };
+            progress.innerText = 'Loading saved data from cloud...';
 
-                await loadFromCloud();
-                requestAnimationFrame(predictLoop);
-            } catch (err) {
-                alert("STILL BLOCKED: Use the 'AA' menu > Website Settings > Camera > ALLOW.");
+            // Step 3 — load existing training data
+            await loadFromCloud();
+
+            // Step 4 — done
+            overlay.classList.add('hidden');
+            setStatus('AI ONLINE — POINT AT BANANA', 'online');
+
+            document.getElementById('prediction-bar').style.display = 'flex';
+            isReady = true;
+            predictLoop();
+
+        } catch (err) {
+            console.error(err);
+            progress.style.color = '#ff4d4d';
+            if (err.name === 'NotAllowedError') {
+                progress.innerText = 'Camera blocked. Open AA menu > Website Settings > Camera > Allow, then reload.';
+            } else {
+                progress.innerText = 'Error: ' + err.message;
             }
         }
+    }
 
-        async function loadFromCloud() {
+    // ── LOAD FROM GITHUB ─────────────────────────────────────
+    async function loadFromCloud() {
+        try {
+            const res = await fetch(
+                `https://raw.githubusercontent.com/${GH_REPO}/main/${GH_PATH}?t=${Date.now()}`
+            );
+            if (!res.ok) return; // no data yet — that's fine
+
+            const data = await res.json();
+            const tensorDataset = {};
+
+            Object.keys(data).forEach(label => {
+                const flat = data[label];
+                const numSamples = Math.floor(flat.length / 1024);
+                if (numSamples === 0) return;
+                tensorDataset[label] = tf.tensor2d(flat, [numSamples, 1024]);
+                counts[label] = numSamples;
+                updateCount(label);
+            });
+
+            classifier.setClassifierDataset(tensorDataset);
+            setStatus(`Cloud data loaded — ${classifier.getNumClasses()} classes`, 'online');
+        } catch (e) {
+            console.warn('No cloud data found, starting fresh.');
+        }
+    }
+
+    // ── ADD SAMPLE ───────────────────────────────────────────
+    async function addSample(label) {
+        if (!isReady) {
+            setStatus('Wait for AI to load first', 'error');
+            return;
+        }
+        try {
+            const imgTensor = tf.browser.fromPixels(webcamEl);
+            const activation = mobileNetModel.infer(imgTensor, 'conv_preds');
+
+            // Keep a copy for undo
+            sampleHistory[label].push(activation.clone());
+
+            classifier.addExample(activation, label);
+            counts[label]++;
+            updateCount(label);
+
+            imgTensor.dispose();
+            activation.dispose();
+
+            setStatus(`✓ Added sample for Color ${label} (total: ${counts[label]})`, 'online');
+        } catch (e) {
+            setStatus('Capture failed — ' + e.message, 'error');
+        }
+    }
+
+    // ── UNDO LAST ────────────────────────────────────────────
+    // Proper undo: rebuilds the class without the last sample
+    function undoLast() {
+        // Find the label that was most recently added to
+        let lastLabel = null;
+        let lastHistory = null;
+
+        LABELS.forEach(label => {
+            if (sampleHistory[label].length > 0) {
+                if (!lastLabel || sampleHistory[label].length > (lastHistory || 0)) {
+                    lastLabel = label;
+                    lastHistory = sampleHistory[label].length;
+                }
+            }
+        });
+
+        if (!lastLabel) {
+            setStatus('Nothing to undo', 'error');
+            return;
+        }
+
+        // Remove last tensor from history
+        const removedTensor = sampleHistory[lastLabel].pop();
+        if (removedTensor) removedTensor.dispose();
+
+        // Rebuild the class from remaining history
+        classifier.clearClass(lastLabel);
+        sampleHistory[lastLabel].forEach(t => {
+            classifier.addExample(t.clone(), lastLabel);
+        });
+
+        counts[lastLabel] = Math.max(0, counts[lastLabel] - 1);
+        updateCount(lastLabel);
+        setStatus(`Undone: removed 1 sample from Color ${lastLabel}`, '');
+    }
+
+    // ── CLEAR ALL ────────────────────────────────────────────
+    function confirmClear() {
+        if (!confirm('Clear ALL training data? This cannot be undone.')) return;
+        LABELS.forEach(label => {
+            sampleHistory[label].forEach(t => t.dispose());
+            sampleHistory[label] = [];
+            classifier.clearClass(label);
+            counts[label] = 0;
+            updateCount(label);
+        });
+        setStatus('All data cleared', 'error');
+    }
+
+    // ── PREDICT LOOP ─────────────────────────────────────────
+    async function predictLoop() {
+        if (!isReady) return;
+
+        if (classifier.getNumClasses() > 0) {
             try {
-                const res = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/${GH_PATH}?t=${Date.now()}`);
-                if (!res.ok) return;
-                const data = await res.json();
-                const tensorObj = {};
-                Object.keys(data).forEach(key => {
-                    tensorObj[key] = tf.tensor2d(data[key], [data[key].length / 1024, 1024]);
-                    counts[key] = Math.floor(data[key].length / 1024);
-                    document.getElementById(`c${key}`).innerText = counts[key];
-                });
-                classifier.setClassifierDataset(tensorObj);
+                const imgTensor = tf.browser.fromPixels(webcamEl);
+                const activation = mobileNetModel.infer(imgTensor, 'conv_preds');
+                const result = await classifier.predictClass(activation);
+
+                const label = result.label;
+                const confidence = result.confidences[label] || 0;
+
+                document.getElementById('prediction-label').innerText = 'Color ' + label;
+                document.getElementById('confidence-bar').style.width = (confidence * 100) + '%';
+                document.getElementById('confidence-pct').innerText = Math.round(confidence * 100) + '%';
+
+                imgTensor.dispose();
+                activation.dispose();
             } catch (e) {}
         }
 
-        async function addSample(label) {
-            const img = await tf.browser.fromPixels(webcamElement);
-            const activation = mobilenet.infer(img, 'conv_preds');
-            classifier.addExample(activation, label);
-            counts[label]++;
-            document.getElementById(`c${label}`).innerText = counts[label];
-            lastLabel = label;
-            img.dispose();
+        requestAnimationFrame(predictLoop);
+    }
+
+    // ── SYNC TO GITHUB ───────────────────────────────────────
+    async function syncToGithub() {
+        if (!isReady) {
+            setStatus('AI not ready yet', 'error');
+            return;
+        }
+        if (classifier.getNumClasses() === 0) {
+            setStatus('No training data to sync', 'error');
+            return;
+        }
+        if (GH_TOKEN === 'YOUR_NEW_TOKEN_HERE') {
+            setStatus('Add your GitHub token first!', 'error');
+            return;
         }
 
-        function undoLast() {
-            if (!lastLabel || counts[lastLabel] === 0) return;
-            classifier.clearClass(lastLabel);
-            counts[lastLabel] = 0;
-            document.getElementById(`c${lastLabel}`).innerText = "0";
-            lastLabel = null;
-        }
+        const btn = document.getElementById('sync-btn');
+        btn.innerText = '⏳ Syncing...';
+        btn.classList.add('loading');
 
-        async function predictLoop() {
-            if (classifier.getNumClasses() > 0) {
-                const img = await tf.browser.fromPixels(webcamElement);
-                const activation = mobilenet.infer(img, 'conv_preds');
-                const result = await classifier.predictClass(activation);
-                document.getElementById('status-msg').innerText = "DETECTED: " + result.label;
-                img.dispose();
-            }
-            requestAnimationFrame(predictLoop);
-        }
-
-        async function syncToGithub() {
-            const btn = document.getElementById('sync-btn');
-            btn.innerText = "...";
-            let dataset = classifier.getClassifierDataset();
-            let datasetObj = {};
+        try {
+            // Serialize classifier data
+            const dataset = classifier.getClassifierDataset();
+            const datasetObj = {};
             Object.keys(dataset).forEach(key => {
                 datasetObj[key] = Array.from(dataset[key].dataSync());
             });
-            const content = btoa(JSON.stringify(datasetObj));
-            try {
-                const getFile = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`, {
-                    headers: { 'Authorization': `token ${GH_TOKEN}` }
-                });
-                let sha = null;
-                if (getFile.ok) {
-                    const fileData = await getFile.json();
-                    sha = fileData.sha;
-                }
-                await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`, {
+
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(datasetObj))));
+
+            // Get existing file SHA (needed for update)
+            let sha = null;
+            const getFile = await fetch(
+                `https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`,
+                { headers: { 'Authorization': `token ${GH_TOKEN}` } }
+            );
+            if (getFile.ok) {
+                const fileData = await getFile.json();
+                sha = fileData.sha;
+            }
+
+            // Push to GitHub
+            const push = await fetch(
+                `https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`,
+                {
                     method: 'PUT',
-                    headers: { 'Authorization': `token ${GH_TOKEN}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: "AI Update", content: content, sha: sha })
-                });
-                alert("CLOUD SAVED");
-            } catch (err) { alert("SYNC FAILED"); }
-            btn.innerText = "SYNC CLOUD";
+                    headers: {
+                        'Authorization': `token ${GH_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: `Banana Brain update — ${new Date().toISOString()}`,
+                        content: content,
+                        sha: sha
+                    })
+                }
+            );
+
+            if (push.ok) {
+                const total = LABELS.reduce((sum, l) => sum + counts[l], 0);
+                setStatus(`✓ Synced! ${total} total samples saved to cloud`, 'online');
+            } else {
+                const err = await push.json();
+                setStatus('Sync failed: ' + (err.message || push.status), 'error');
+            }
+        } catch (err) {
+            setStatus('Sync error: ' + err.message, 'error');
         }
-    </script>
+
+        btn.innerText = '☁ Sync Cloud';
+        btn.classList.remove('loading');
+    }
+
+    // ── HELPERS ──────────────────────────────────────────────
+    function setStatus(msg, type) {
+        const el = document.getElementById('status-msg');
+        el.innerText = msg;
+        el.className = type || '';
+    }
+
+    function updateCount(label) {
+        const el = document.getElementById(`c${label}`);
+        if (el) el.innerText = counts[label];
+        const btn = document.getElementById(`btn-${label}`);
+        if (btn) btn.classList.toggle('has-data', counts[label] > 0);
+    }
+</script>
 </body>
 </html>
