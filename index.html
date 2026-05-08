@@ -9,52 +9,33 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
     <style>
-        :root { --bg: #000; --accent: #f9d71c; --glass: rgba(255, 255, 255, 0.1); }
-        body { background: var(--bg); color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto; margin: 0; overflow: hidden; position: fixed; width: 100%; height: 100%; }
-        
-        #video-container { position: relative; width: 100vw; height: 45vh; background: #111; display: flex; align-items: center; justify-content: center; }
-        #webcam { width: 100%; height: 100%; object-fit: cover; display: none; }
-        
-        /* High-Visibility Force Start */
-        #init-overlay { position: absolute; z-index: 100; background: #000; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
-        .start-icon { font-size: 80px; color: var(--accent); margin-bottom: 20px; }
-
-        .controls { height: 55vh; padding: 15px; background: #0a0a0a; border-top: 1px solid var(--glass); display: flex; flex-direction: column; box-sizing: border-box; }
-        .mode-toggle { display: flex; background: var(--glass); border-radius: 12px; margin-bottom: 10px; padding: 4px; }
-        .mode-btn { flex: 1; padding: 12px; text-align: center; font-weight: bold; border-radius: 10px; }
-        .active-mode { background: var(--accent); color: #000; }
-        
-        #train-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; flex-grow: 1; }
-        .stage-btn { background: #1a1a1a; border: 1px solid var(--glass); border-radius: 8px; color: #fff; font-size: 13px; padding: 12px 2px; font-weight: bold; }
-        .count-badge { display: block; font-size: 9px; opacity: 0.5; margin-top: 2px; }
-        
-        #test-view { display: none; text-align: center; flex-grow: 1; justify-content: center; align-items: center; flex-direction: column; border: 2px dashed var(--glass); border-radius: 15px; margin: 10px 0; }
-        
-        .action-bar { display: flex; gap: 8px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
-        .btn { flex: 1; padding: 16px; border-radius: 12px; border: none; font-weight: bold; font-size: 14px; }
-        .btn-sync { background: #fff; color: #000; }
-        .btn-undo { background: #222; color: #fff; }
-        #status-msg { font-size: 10px; text-align: center; margin-bottom: 5px; color: #888; }
+        :root { --bg: #000; --accent: #f9d71c; }
+        body { background: var(--bg); color: #fff; font-family: -apple-system; margin: 0; overflow: hidden; position: fixed; width: 100%; height: 100%; }
+        #video-container { position: relative; width: 100vw; height: 40vh; background: #111; }
+        #webcam { width: 100%; height: 100%; object-fit: cover; background: #000; }
+        #init-overlay { position: absolute; z-index: 100; background: #000; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .controls { height: 60vh; padding: 10px; background: #0a0a0a; display: flex; flex-direction: column; }
+        #train-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; flex-grow: 1; }
+        .stage-btn { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; color: #fff; font-size: 14px; padding: 10px 0; }
+        .count-badge { display: block; font-size: 10px; color: var(--accent); }
+        .action-bar { display: flex; gap: 8px; padding-bottom: 20px; }
+        .btn { flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div id="video-container">
-        <div id="init-overlay" onclick="startApp()">
-            <i class="bi bi-play-circle-fill start-icon" id="play-icon"></i>
-            <h2 id="btn-text" style="color:var(--accent); margin:0;">ACTIVATE SENSOR</h2>
-            <p id="sub-text" style="opacity:0.6;">Tap to unlock camera on iPhone</p>
+        <div id="init-overlay" onclick="emergencyStart()">
+            <i class="bi bi-camera-fill" style="font-size: 50px; color: var(--accent);"></i>
+            <h2 style="color:var(--accent);">FORCE START CAMERA</h2>
+            <p style="opacity:0.7;">Tap to bypass iOS restrictions</p>
         </div>
         <video id="webcam" autoplay playsinline muted></video>
     </div>
 
     <div class="controls">
-        <div id="status-msg">WAITING FOR USER...</div>
-        <div class="mode-toggle">
-            <div id="btn-train" class="mode-btn active-mode" onclick="setMode('train')">TRAIN</div>
-            <div id="btn-test" class="mode-btn" onclick="setMode('test')">TEST</div>
-        </div>
-
+        <div id="status-msg" style="text-align:center; font-size:10px; color:#888; margin-bottom:5px;">LENS READY</div>
+        
         <div id="train-grid">
             <button class="stage-btn" onclick="addSample('1')">1 <span class="count-badge" id="c1">0</span></button>
             <button class="stage-btn" onclick="addSample('1.5')">1.5 <span class="count-badge" id="c1.5">0</span></button>
@@ -67,17 +48,12 @@
             <button class="stage-btn" onclick="addSample('5')">5 <span class="count-badge" id="c5">0</span></button>
             <button class="stage-btn" onclick="addSample('5.5')">5.5 <span class="count-badge" id="c5.5">0</span></button>
             <button class="stage-btn" onclick="addSample('6')">6 <span class="count-badge" id="c6">0</span></button>
-            <button class="stage-btn" onclick="downloadBackup()" style="background:#222;"><i class="bi bi-download"></i></button>
-        </div>
-
-        <div id="test-view">
-            <div id="prediction-text" style="font-size: 48px; font-weight: 900; color: var(--accent);">READY</div>
-            <div id="confidence-bar" style="font-size: 14px; opacity: 0.7;">Waiting for input...</div>
+            <button class="stage-btn" onclick="location.reload()" style="background:#331111;">RELOAD</button>
         </div>
 
         <div class="action-bar">
-            <button class="btn btn-undo" onclick="undoLast()">UNDO LAST</button>
-            <button class="btn btn-sync" id="sync-btn" onclick="syncToGithub()">SYNC TO CLOUD</button>
+            <button class="btn" style="background:#222; color:#fff;" onclick="undoLast()">UNDO</button>
+            <button class="btn" id="sync-btn" style="background:#fff; color:#000;" onclick="syncToGithub()">SYNC CLOUD</button>
         </div>
     </div>
 
@@ -89,49 +65,32 @@
         let classifier, mobilenet;
         const webcamElement = document.getElementById('webcam');
         const counts = {"1":0,"1.5":0,"2":0,"2.5":0,"3":0,"3.5":0,"4":0,"4.5":0,"5":0,"5.5":0,"6":0};
-        let lastLabelAdded = null;
-        let currentMode = 'train';
+        let lastLabel = null;
 
-        async function startApp() {
-            const btnText = document.getElementById('btn-text');
-            const playIcon = document.getElementById('play-icon');
-            
-            btnText.innerText = "LOADING AI...";
-            playIcon.className = "bi bi-hourglass-split start-icon";
+        async function emergencyStart() {
+            document.getElementById('status-msg').innerText = "POWERING ON...";
+            classifier = knnClassifier.create();
+            mobilenet = await mobilenet.load();
 
             try {
-                // 1. Setup AI
-                classifier = knnClassifier.create();
-                mobilenet = await mobilenet.load();
-                
-                btnText.innerText = "OPENING LENS...";
-
-                // 2. iOS Camera Request
+                // Try the simplest possible camera request for iOS
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: { ideal: 'environment' } 
-                    }, 
+                    video: true, 
                     audio: false 
                 });
                 
-                webcamElement.setAttribute('autoplay', '');
-                webcamElement.setAttribute('muted', '');
-                webcamElement.setAttribute('playsinline', '');
                 webcamElement.srcObject = stream;
-                
-                // 3. Forced Start
-                await webcamElement.play();
-                
-                document.getElementById('init-overlay').style.display = 'none';
-                webcamElement.style.display = 'block';
-                document.getElementById('status-msg').innerText = "SYSTEM ACTIVE";
-                
+                // Force play command
+                webcamElement.onloadedmetadata = () => {
+                    webcamElement.play();
+                    document.getElementById('init-overlay').style.display = 'none';
+                    document.getElementById('status-msg').innerText = "AI ONLINE";
+                };
+
                 await loadFromCloud();
                 requestAnimationFrame(predictLoop);
             } catch (err) {
-                btnText.innerText = "ERROR: PERMISSION";
-                playIcon.className = "bi bi-exclamation-triangle start-icon";
-                alert("Please go to iPhone Settings > Safari > Camera and set it to ALLOW.");
+                alert("STILL BLOCKED: Use the 'AA' menu > Website Settings > Camera > ALLOW.");
             }
         }
 
@@ -143,24 +102,11 @@
                 const tensorObj = {};
                 Object.keys(data).forEach(key => {
                     tensorObj[key] = tf.tensor2d(data[key], [data[key].length / 1024, 1024]);
-                    if(counts.hasOwnProperty(key)) {
-                        counts[key] = Math.floor(data[key].length / 1024);
-                        document.getElementById(`c${key}`).innerText = counts[key];
-                    }
+                    counts[key] = Math.floor(data[key].length / 1024);
+                    document.getElementById(`c${key}`).innerText = counts[key];
                 });
                 classifier.setClassifierDataset(tensorObj);
-                document.getElementById('status-msg').innerText = "CLOUD DATA LOADED";
-            } catch (e) {
-                document.getElementById('status-msg').innerText = "STARTING NEW BRAIN";
-            }
-        }
-
-        function setMode(mode) {
-            currentMode = mode;
-            document.getElementById('btn-train').classList.toggle('active-mode', mode === 'train');
-            document.getElementById('btn-test').classList.toggle('active-mode', mode === 'test');
-            document.getElementById('train-grid').style.display = mode === 'train' ? 'grid' : 'none';
-            document.getElementById('test-view').style.display = mode === 'test' ? 'flex' : 'none';
+            } catch (e) {}
         }
 
         async function addSample(label) {
@@ -169,26 +115,24 @@
             classifier.addExample(activation, label);
             counts[label]++;
             document.getElementById(`c${label}`).innerText = counts[label];
-            lastLabelAdded = label;
+            lastLabel = label;
             img.dispose();
         }
 
         function undoLast() {
-            if (!lastLabelAdded || counts[lastLabelAdded] === 0) return;
-            classifier.clearClass(lastLabelAdded);
-            counts[lastLabelAdded] = 0;
-            document.getElementById(`c${lastLabelAdded}`).innerText = "0";
-            document.getElementById('status-msg').innerText = "LOCAL UNDO COMPLETE";
-            lastLabelAdded = null;
+            if (!lastLabel || counts[lastLabel] === 0) return;
+            classifier.clearClass(lastLabel);
+            counts[lastLabel] = 0;
+            document.getElementById(`c${lastLabel}`).innerText = "0";
+            lastLabel = null;
         }
 
         async function predictLoop() {
-            if (currentMode === 'test' && classifier && classifier.getNumClasses() > 0) {
+            if (classifier.getNumClasses() > 0) {
                 const img = await tf.browser.fromPixels(webcamElement);
                 const activation = mobilenet.infer(img, 'conv_preds');
                 const result = await classifier.predictClass(activation);
-                document.getElementById('prediction-text').innerText = result.label;
-                document.getElementById('confidence-bar').innerText = `${Math.floor(result.confidences[result.label] * 100)}% Match`;
+                document.getElementById('status-msg').innerText = "DETECTED: " + result.label;
                 img.dispose();
             }
             requestAnimationFrame(predictLoop);
@@ -196,14 +140,13 @@
 
         async function syncToGithub() {
             const btn = document.getElementById('sync-btn');
-            btn.innerText = "UPDATING...";
+            btn.innerText = "...";
             let dataset = classifier.getClassifierDataset();
             let datasetObj = {};
             Object.keys(dataset).forEach(key => {
                 datasetObj[key] = Array.from(dataset[key].dataSync());
             });
             const content = btoa(JSON.stringify(datasetObj));
-
             try {
                 const getFile = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`, {
                     headers: { 'Authorization': `token ${GH_TOKEN}` }
@@ -213,27 +156,14 @@
                     const fileData = await getFile.json();
                     sha = fileData.sha;
                 }
-                const response = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`, {
+                await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`, {
                     method: 'PUT',
                     headers: { 'Authorization': `token ${GH_TOKEN}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: "AI Update", content: content, sha: sha })
                 });
-                if (response.ok) { alert("SYNCED!"); }
-            } catch (err) { alert("SYNC ERROR."); }
-            btn.innerText = "SYNC TO CLOUD";
-        }
-
-        function downloadBackup() {
-            let dataset = classifier.getClassifierDataset();
-            let datasetObj = {};
-            Object.keys(dataset).forEach(key => {
-                datasetObj[key] = Array.from(dataset[key].dataSync());
-            });
-            let blob = new Blob([JSON.stringify(datasetObj)], {type: "application/json"});
-            let a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = "backup.json";
-            a.click();
+                alert("CLOUD SAVED");
+            } catch (err) { alert("SYNC FAILED"); }
+            btn.innerText = "SYNC CLOUD";
         }
     </script>
 </body>
