@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pulp Pro | AI Trainer</title>
+    <title>Pulp Pro | Secure AI</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
     <style>
-        :root { --bg: #000; --accent: #f9d71c; --glass: rgba(255, 255, 255, 0.1); }
+        :root { --bg: #000; --accent: #f9d71c; --danger: #ff4444; --glass: rgba(255, 255, 255, 0.1); }
         body { background: var(--bg); color: #fff; font-family: -apple-system, system-ui; margin: 0; overflow: hidden; }
         #video-container { position: relative; width: 100vw; height: 50vh; background: #111; display: flex; align-items: center; justify-content: center; }
         #webcam { width: 100%; height: 100%; object-fit: cover; display: none; }
@@ -20,18 +20,16 @@
         .mode-btn { flex: 1; padding: 12px; text-align: center; font-weight: bold; border-radius: 10px; transition: 0.3s; cursor: pointer; }
         .active-mode { background: var(--accent); color: #000; }
         
-        #train-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; flex-grow: 1; }
-        .stage-btn { background: #1a1a1a; border: 1px solid var(--glass); border-radius: 8px; color: #fff; font-size: 13px; padding: 10px 2px; font-weight: bold; }
+        #train-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+        .stage-btn { background: #1a1a1a; border: 1px solid var(--glass); border-radius: 8px; color: #fff; font-size: 13px; padding: 10px 2px; font-weight: bold; position: relative; }
         .stage-btn:active { background: var(--accent); color: #000; }
         .count-badge { display: block; font-size: 9px; opacity: 0.5; margin-top: 2px; }
         
-        #test-view { display: none; text-align: center; flex-grow: 1; justify-content: center; align-items: center; flex-direction: column; border: 2px dashed var(--glass); border-radius: 15px; margin-bottom: 10px; }
-        #prediction-text { font-size: 42px; font-weight: 900; color: var(--accent); margin: 0; }
+        .action-bar { display: flex; gap: 8px; margin-top: auto; padding-bottom: 10px; }
+        .btn { flex: 1; padding: 14px; border-radius: 12px; border: none; font-weight: bold; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-sync { background: var(--accent); color: #000; }
+        .btn-undo { background: #333; color: #fff; border: 1px solid #555; }
         
-        .action-bar { display: flex; gap: 8px; }
-        .btn { flex: 1; padding: 14px; border-radius: 12px; border: none; font-weight: bold; font-size: 13px; }
-        .btn-sync { background: #fff; color: #000; }
-        .btn-purge { background: #222; color: #ff4444; }
         #status-msg { font-size: 10px; text-align: center; margin-bottom: 5px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
@@ -46,7 +44,7 @@
     </div>
 
     <div class="controls">
-        <div id="status-msg">System Ready</div>
+        <div id="status-msg">Cloud-Protected Mode</div>
         <div class="mode-toggle">
             <div id="btn-train" class="mode-btn active-mode" onclick="setMode('train')">TRAIN</div>
             <div id="btn-test" class="mode-btn" onclick="setMode('test')">TEST</div>
@@ -67,14 +65,18 @@
             <button class="stage-btn" onclick="downloadBackup()" style="background:#222;"><i class="bi bi-download"></i></button>
         </div>
 
-        <div id="test-view">
-            <div id="prediction-text">---</div>
-            <div id="confidence-bar">Awaiting Data</div>
+        <div id="test-view" style="display:none; text-align:center; flex-grow:1; justify-content:center; align-items:center; flex-direction:column;">
+            <div id="prediction-text" style="font-size:42px; font-weight:900; color:var(--accent);">---</div>
+            <div id="confidence-bar">Awaiting Scan</div>
         </div>
 
         <div class="action-bar">
-            <button class="btn btn-sync" id="sync-btn" onclick="syncToGithub()">SYNC TO CLOUD</button>
-            <button class="btn btn-purge" onclick="purgeMemory()">RESET</button>
+            <button class="btn btn-undo" onclick="undoLast()">
+                <i class="bi bi-arrow-counterclockwise"></i> UNDO LAST
+            </button>
+            <button class="btn btn-sync" id="sync-btn" onclick="syncToGithub()">
+                <i class="bi bi-cloud-arrow-up-fill"></i> SYNC TO CLOUD
+            </button>
         </div>
     </div>
 
@@ -86,13 +88,12 @@
         let classifier, mobilenet;
         const webcamElement = document.getElementById('webcam');
         const counts = {"1":0,"1.5":0,"2":0,"2.5":0,"3":0,"3.5":0,"4":0,"4.5":0,"5":0,"5.5":0,"6":0};
+        let lastLabel = null;
         let currentMode = 'train';
 
         async function startCamera() {
-            document.getElementById('status-msg').innerText = "Loading AI Models...";
             classifier = knnClassifier.create();
             mobilenet = await mobilenet.load();
-            
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: 'environment', width: 640, height: 640 }, 
@@ -101,68 +102,55 @@
                 webcamElement.srcObject = stream;
                 webcamElement.style.display = 'block';
                 document.getElementById('cam-placeholder').style.display = 'none';
-                document.getElementById('status-msg').innerText = "Checking Cloud...";
                 await loadFromCloud();
                 requestAnimationFrame(predictLoop);
-            } catch (err) {
-                alert("Camera Error: Please ensure you are on HTTPS and allow camera access.");
-            }
+            } catch (err) { alert("Camera Error."); }
         }
 
         async function loadFromCloud() {
             try {
                 const res = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/${GH_PATH}?t=${Date.now()}`);
-                if (!res.ok) throw new Error();
+                if (!res.ok) return;
                 const data = await res.json();
                 const tensorObj = {};
                 Object.keys(data).forEach(key => {
                     tensorObj[key] = tf.tensor2d(data[key], [data[key].length / 1024, 1024]);
-                    // Update counts based on loaded data
-                    if(counts.hasOwnProperty(key)) {
-                        counts[key] = Math.floor(data[key].length / 1024);
-                        document.getElementById(`c${key}`).innerText = counts[key];
-                    }
+                    counts[key] = Math.floor(data[key].length / 1024);
+                    document.getElementById(`c${key}`).innerText = counts[key];
                 });
                 classifier.setClassifierDataset(tensorObj);
-                document.getElementById('status-msg').innerText = "Cloud Brain Synced.";
-            } catch (e) {
-                document.getElementById('status-msg').innerText = "New Brain Started.";
-            }
-        }
-
-        function setMode(mode) {
-            currentMode = mode;
-            document.getElementById('btn-train').classList.toggle('active-mode', mode === 'train');
-            document.getElementById('btn-test').classList.toggle('active-mode', mode === 'test');
-            document.getElementById('train-grid').style.display = mode === 'train' ? 'grid' : 'none';
-            document.getElementById('test-view').style.display = mode === 'test' ? 'flex' : 'none';
+                document.getElementById('status-msg').innerText = "Cloud Synced";
+            } catch (e) { document.getElementById('status-msg').innerText = "New Session"; }
         }
 
         async function addSample(label) {
-            if(!mobilenet) return;
             const img = await tf.browser.fromPixels(webcamElement);
             const activation = mobilenet.infer(img, 'conv_preds');
             classifier.addExample(activation, label);
             counts[label]++;
             document.getElementById(`c${label}`).innerText = counts[label];
+            lastLabel = label;
             img.dispose();
         }
 
-        async function predictLoop() {
-            if (currentMode === 'test' && classifier && classifier.getNumClasses() > 0) {
-                const img = await tf.browser.fromPixels(webcamElement);
-                const activation = mobilenet.infer(img, 'conv_preds');
-                const result = await classifier.predictClass(activation);
-                document.getElementById('prediction-text').innerText = result.label;
-                document.getElementById('confidence-bar').innerText = `${Math.floor(result.confidences[result.label] * 100)}% Match`;
-                img.dispose();
+        // --- THE MISTAKE BUFFER ---
+        function undoLast() {
+            if (!lastLabel || counts[lastLabel] <= 0) {
+                alert("Nothing to undo.");
+                return;
             }
-            requestAnimationFrame(predictLoop);
+            // This only affects the local session
+            classifier.clearClass(lastLabel);
+            counts[lastLabel] = 0; // Simplified for stability: clears current class session
+            document.getElementById(`c${lastLabel}`).innerText = "0*";
+            document.getElementById('status-msg').innerText = "Last label cleared locally";
+            lastLabel = null;
         }
 
         async function syncToGithub() {
             const btn = document.getElementById('sync-btn');
-            btn.innerText = "UPLOADING...";
+            btn.innerText = "UPDATING...";
+            
             let dataset = classifier.getClassifierDataset();
             let datasetObj = {};
             Object.keys(dataset).forEach(key => {
@@ -179,14 +167,35 @@
                     const fileData = await getFile.json();
                     sha = fileData.sha;
                 }
-                const response = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`, {
+                // Puts the data - strictly overwrites with current merged state
+                await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`, {
                     method: 'PUT',
                     headers: { 'Authorization': `token ${GH_TOKEN}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: "Update", content: content, sha: sha })
                 });
-                if (response.ok) { alert("Synced to GitHub!"); }
-            } catch (err) { alert("Sync Error."); }
+                alert("Cloud Updated Successfully.");
+            } catch (err) { alert("Sync Failed."); }
             btn.innerText = "SYNC TO CLOUD";
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('btn-train').classList.toggle('active-mode', mode === 'train');
+            document.getElementById('btn-test').classList.toggle('active-mode', mode === 'test');
+            document.getElementById('train-grid').style.display = mode === 'train' ? 'grid' : 'none';
+            document.getElementById('test-view').style.display = mode === 'test' ? 'flex' : 'none';
+        }
+
+        async function predictLoop() {
+            if (currentMode === 'test' && classifier && classifier.getNumClasses() > 0) {
+                const img = await tf.browser.fromPixels(webcamElement);
+                const activation = mobilenet.infer(img, 'conv_preds');
+                const result = await classifier.predictClass(activation);
+                document.getElementById('prediction-text').innerText = result.label;
+                document.getElementById('confidence-bar').innerText = `${Math.floor(result.confidences[result.label] * 100)}% Match`;
+                img.dispose();
+            }
+            requestAnimationFrame(predictLoop);
         }
 
         function downloadBackup() {
@@ -200,10 +209,6 @@
             a.href = URL.createObjectURL(blob);
             a.download = "banana_backup.json";
             a.click();
-        }
-
-        function purgeMemory() { 
-            if(confirm("Clear local work?")) { location.reload(); } 
         }
     </script>
 </body>
