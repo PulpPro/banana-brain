@@ -11,52 +11,65 @@
     <style>
         :root { --bg: #000; --accent: #f9d71c; --glass: rgba(255, 255, 255, 0.1); }
         body { background: var(--bg); color: #fff; font-family: -apple-system, system-ui; margin: 0; overflow: hidden; }
-        #video-container { position: relative; width: 100vw; height: 55vh; background: #111; }
-        #webcam { width: 100%; height: 100%; object-fit: cover; }
-        .controls { height: 45vh; padding: 15px; background: #0a0a0a; border-top: 1px solid var(--glass); display: flex; flex-direction: column; }
+        #video-container { position: relative; width: 100vw; height: 50vh; background: #111; display: flex; align-items: center; justify-content: center; }
+        #webcam { width: 100%; height: 100%; object-fit: cover; display: none; }
+        #cam-placeholder { text-align: center; color: var(--accent); cursor: pointer; }
+        
+        .controls { height: 50vh; padding: 15px; background: #0a0a0a; border-top: 1px solid var(--glass); display: flex; flex-direction: column; box-sizing: border-box; }
         .mode-toggle { display: flex; background: var(--glass); border-radius: 12px; margin-bottom: 10px; padding: 4px; }
         .mode-btn { flex: 1; padding: 12px; text-align: center; font-weight: bold; border-radius: 10px; transition: 0.3s; cursor: pointer; }
         .active-mode { background: var(--accent); color: #000; }
-        #train-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
-        .stage-btn { background: #1a1a1a; border: 1px solid var(--glass); border-radius: 8px; color: #fff; font-size: 14px; padding: 15px 5px; font-weight: bold; }
+        
+        #train-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; flex-grow: 1; }
+        .stage-btn { background: #1a1a1a; border: 1px solid var(--glass); border-radius: 8px; color: #fff; font-size: 13px; padding: 10px 2px; font-weight: bold; }
         .stage-btn:active { background: var(--accent); color: #000; }
-        .count-badge { display: block; font-size: 10px; opacity: 0.5; margin-top: 4px; }
-        #test-view { display: none; text-align: center; flex-grow: 1; justify-content: center; align-items: center; flex-direction: column; border: 2px dashed var(--glass); border-radius: 15px; }
-        #prediction-text { font-size: 38px; font-weight: 900; color: var(--accent); margin: 0; }
-        .action-bar { display: flex; gap: 10px; }
-        .btn { flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: bold; font-size: 14px; }
+        .count-badge { display: block; font-size: 9px; opacity: 0.5; margin-top: 2px; }
+        
+        #test-view { display: none; text-align: center; flex-grow: 1; justify-content: center; align-items: center; flex-direction: column; border: 2px dashed var(--glass); border-radius: 15px; margin-bottom: 10px; }
+        #prediction-text { font-size: 42px; font-weight: 900; color: var(--accent); margin: 0; }
+        
+        .action-bar { display: flex; gap: 8px; }
+        .btn { flex: 1; padding: 14px; border-radius: 12px; border: none; font-weight: bold; font-size: 13px; }
         .btn-sync { background: #fff; color: #000; }
-        .btn-purge { background: #331111; color: #ff4444; }
-        #status-msg { font-size: 10px; text-align: center; margin-bottom: 5px; color: #888; }
+        .btn-purge { background: #222; color: #ff4444; }
+        #status-msg { font-size: 10px; text-align: center; margin-bottom: 5px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
     <div id="video-container">
+        <div id="cam-placeholder" onclick="startCamera()">
+            <i class="bi bi-camera-fill" style="font-size: 40px;"></i>
+            <p>TAP TO START CAMERA</p>
+        </div>
         <video autoplay playsinline muted id="webcam"></video>
     </div>
 
     <div class="controls">
-        <div id="status-msg">Initializing AI Engine...</div>
+        <div id="status-msg">System Ready</div>
         <div class="mode-toggle">
             <div id="btn-train" class="mode-btn active-mode" onclick="setMode('train')">TRAIN</div>
             <div id="btn-test" class="mode-btn" onclick="setMode('test')">TEST</div>
         </div>
 
         <div id="train-grid">
-            <button class="stage-btn" onclick="addSample(0)">S1 <span class="count-badge" id="c0">0</span></button>
-            <button class="stage-btn" onclick="addSample(1)">S2 <span class="count-badge" id="c1">0</span></button>
-            <button class="stage-btn" onclick="addSample(2)">S3 <span class="count-badge" id="c2">0</span></button>
-            <button class="stage-btn" onclick="addSample(3)">S4 <span class="count-badge" id="c3">0</span></button>
-            <button class="stage-btn" onclick="addSample(4)">S5 <span class="count-badge" id="c4">0</span></button>
-            <button class="stage-btn" onclick="addSample(5)">S6 <span class="count-badge" id="c5">0</span></button>
-            <button class="stage-btn" onclick="addSample(6)">S7 <span class="count-badge" id="c6">0</span></button>
+            <button class="stage-btn" onclick="addSample('1')">1 <span class="count-badge" id="c1">0</span></button>
+            <button class="stage-btn" onclick="addSample('1.5')">1.5 <span class="count-badge" id="c1.5">0</span></button>
+            <button class="stage-btn" onclick="addSample('2')">2 <span class="count-badge" id="c2">0</span></button>
+            <button class="stage-btn" onclick="addSample('2.5')">2.5 <span class="count-badge" id="c2.5">0</span></button>
+            <button class="stage-btn" onclick="addSample('3')">3 <span class="count-badge" id="c3">0</span></button>
+            <button class="stage-btn" onclick="addSample('3.5')">3.5 <span class="count-badge" id="c3.5">0</span></button>
+            <button class="stage-btn" onclick="addSample('4')">4 <span class="count-badge" id="c4">0</span></button>
+            <button class="stage-btn" onclick="addSample('4.5')">4.5 <span class="count-badge" id="c4.5">0</span></button>
+            <button class="stage-btn" onclick="addSample('5')">5 <span class="count-badge" id="c5">0</span></button>
+            <button class="stage-btn" onclick="addSample('5.5')">5.5 <span class="count-badge" id="c5.5">0</span></button>
+            <button class="stage-btn" onclick="addSample('6')">6 <span class="count-badge" id="c6">0</span></button>
             <button class="stage-btn" onclick="downloadBackup()" style="background:#222;"><i class="bi bi-download"></i></button>
         </div>
 
         <div id="test-view">
-            <div id="prediction-text">READY</div>
-            <div id="confidence-bar">Point at banana to test</div>
+            <div id="prediction-text">---</div>
+            <div id="confidence-bar">Awaiting Data</div>
         </div>
 
         <div class="action-bar">
@@ -66,32 +79,33 @@
     </div>
 
     <script>
-        // --- GITHUB CONFIGURATION ---
         const GH_TOKEN = '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'; 
         const GH_REPO = 'PulpPro/banana-brain'; 
         const GH_PATH = 'scanner/banana_brain.json';
         
         let classifier, mobilenet;
         const webcamElement = document.getElementById('webcam');
-        const counts = [0, 0, 0, 0, 0, 0, 0];
+        const counts = {"1":0,"1.5":0,"2":0,"2.5":0,"3":0,"3.5":0,"4":0,"4.5":0,"5":0,"5.5":0,"6":0};
         let currentMode = 'train';
 
-        async function init() {
+        async function startCamera() {
+            document.getElementById('status-msg').innerText = "Loading AI Models...";
+            classifier = knnClassifier.create();
+            mobilenet = await mobilenet.load();
+            
             try {
-                classifier = knnClassifier.create();
-                mobilenet = await mobilenet.load();
-                
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment' }, 
+                    video: { facingMode: 'environment', width: 640, height: 640 }, 
                     audio: false 
                 });
                 webcamElement.srcObject = stream;
-                
-                document.getElementById('status-msg').innerText = "Checking Cloud for existing Brain...";
+                webcamElement.style.display = 'block';
+                document.getElementById('cam-placeholder').style.display = 'none';
+                document.getElementById('status-msg').innerText = "Checking Cloud...";
                 await loadFromCloud();
                 requestAnimationFrame(predictLoop);
             } catch (err) {
-                document.getElementById('status-msg').innerText = "Camera access denied or Error.";
+                alert("Camera Error: Please ensure you are on HTTPS and allow camera access.");
             }
         }
 
@@ -99,16 +113,20 @@
             try {
                 const res = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/${GH_PATH}?t=${Date.now()}`);
                 if (!res.ok) throw new Error();
-                
                 const data = await res.json();
                 const tensorObj = {};
                 Object.keys(data).forEach(key => {
                     tensorObj[key] = tf.tensor2d(data[key], [data[key].length / 1024, 1024]);
+                    // Update counts based on loaded data
+                    if(counts.hasOwnProperty(key)) {
+                        counts[key] = Math.floor(data[key].length / 1024);
+                        document.getElementById(`c${key}`).innerText = counts[key];
+                    }
                 });
                 classifier.setClassifierDataset(tensorObj);
-                document.getElementById('status-msg').innerText = "Cloud Brain Synced & Loaded.";
+                document.getElementById('status-msg').innerText = "Cloud Brain Synced.";
             } catch (e) {
-                document.getElementById('status-msg').innerText = "Starting with fresh Brain.";
+                document.getElementById('status-msg').innerText = "New Brain Started.";
             }
         }
 
@@ -121,25 +139,22 @@
         }
 
         async function addSample(label) {
+            if(!mobilenet) return;
             const img = await tf.browser.fromPixels(webcamElement);
             const activation = mobilenet.infer(img, 'conv_preds');
             classifier.addExample(activation, label);
-            
             counts[label]++;
             document.getElementById(`c${label}`).innerText = counts[label];
             img.dispose();
         }
 
         async function predictLoop() {
-            if (currentMode === 'test' && classifier.getNumClasses() > 0) {
+            if (currentMode === 'test' && classifier && classifier.getNumClasses() > 0) {
                 const img = await tf.browser.fromPixels(webcamElement);
                 const activation = mobilenet.infer(img, 'conv_preds');
                 const result = await classifier.predictClass(activation);
-                
-                const stages = ["Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6", "Stage 7"];
-                document.getElementById('prediction-text').innerText = stages[result.label];
-                document.getElementById('confidence-bar').innerText = `${Math.floor(result.confidences[result.label] * 100)}% Confidence`;
-                
+                document.getElementById('prediction-text').innerText = result.label;
+                document.getElementById('confidence-bar').innerText = `${Math.floor(result.confidences[result.label] * 100)}% Match`;
                 img.dispose();
             }
             requestAnimationFrame(predictLoop);
@@ -147,9 +162,7 @@
 
         async function syncToGithub() {
             const btn = document.getElementById('sync-btn');
-            const originalText = btn.innerText;
             btn.innerText = "UPLOADING...";
-            
             let dataset = classifier.getClassifierDataset();
             let datasetObj = {};
             Object.keys(dataset).forEach(key => {
@@ -161,32 +174,19 @@
                 const getFile = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`, {
                     headers: { 'Authorization': `token ${GH_TOKEN}` }
                 });
-                
                 let sha = null;
                 if (getFile.ok) {
                     const fileData = await getFile.json();
                     sha = fileData.sha;
                 }
-
                 const response = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`, {
                     method: 'PUT',
                     headers: { 'Authorization': `token ${GH_TOKEN}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        message: "AI Brain Update from iPhone", 
-                        content: content, 
-                        sha: sha 
-                    })
+                    body: JSON.stringify({ message: "Update", content: content, sha: sha })
                 });
-
-                if (response.ok) { 
-                    alert("Sync Complete! Your brain is safe in the cloud."); 
-                } else { 
-                    alert("Sync Error. Double check your Repo path."); 
-                }
-            } catch (err) { 
-                alert("Network Error: Could not reach GitHub."); 
-            }
-            btn.innerText = originalText;
+                if (response.ok) { alert("Synced to GitHub!"); }
+            } catch (err) { alert("Sync Error."); }
+            btn.innerText = "SYNC TO CLOUD";
         }
 
         function downloadBackup() {
@@ -203,14 +203,8 @@
         }
 
         function purgeMemory() { 
-            if(confirm("Reset local session? (Does not delete cloud file unless you sync)")) { 
-                classifier.clearAllClasses(); 
-                counts.fill(0); 
-                location.reload(); 
-            } 
+            if(confirm("Clear local work?")) { location.reload(); } 
         }
-        
-        init();
     </script>
 </body>
 </html>
