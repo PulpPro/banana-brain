@@ -45,28 +45,37 @@
         .pip.done { background: var(--accent); }
         .pip.active { background: #fff; }
 
-        /* ── CAMERA ── */
+        /* ── CAMERA — wide rectangle, short height ── */
         #cam-wrap {
-            position: relative; width: 100%;
-            height: 52vh; background: #000;
-            flex-shrink: 0; overflow: hidden;
+            position: relative;
+            width: 100%;
+            height: 32vh; /* Short height — fits box at 1m distance */
+            background: #000;
+            flex-shrink: 0;
+            overflow: hidden;
         }
-        #webcam { width: 100%; height: 100%; object-fit: cover; display: block; }
+        #webcam {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Wide rectangle crop */
+            display: block;
+        }
+        /* Rectangle crosshair matching box shape */
         #crosshair {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 55%; height: 55%;
+            width: 80%; height: 75%;
             border: 2px solid rgba(249,215,28,0.65);
-            border-radius: 12px; pointer-events: none;
+            border-radius: 8px; pointer-events: none;
         }
         #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity 0.08s; }
         #stage-overlay {
-            position: absolute; top: 12px; left: 50%;
+            position: absolute; top: 10px; left: 50%;
             transform: translateX(-50%);
             background: rgba(0,0,0,0.72);
             border: 1px solid var(--accent);
-            padding: 5px 14px; border-radius: 20px;
-            font-size: 0.6rem; font-weight: 900;
+            padding: 4px 12px; border-radius: 20px;
+            font-size: 0.58rem; font-weight: 900;
             color: var(--accent); text-transform: uppercase;
             letter-spacing: 2px; white-space: nowrap; display: none;
         }
@@ -74,42 +83,42 @@
             position: absolute; inset: 0; background: #000;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            gap: 10px; cursor: pointer;
+            gap: 8px; cursor: pointer;
         }
         #cam-init.hidden { display: none; }
-        #cam-init i { font-size: 2.5rem; color: var(--accent); }
-        #cam-init-title { font-size: 0.8rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; }
-        #cam-init-sub { font-size: 0.55rem; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
-        #cam-init-prog { font-size: 0.55rem; color: var(--lime); text-transform: uppercase; letter-spacing: 1px; animation: pulse 1.2s infinite; display: none; }
+        #cam-init i { font-size: 2rem; color: var(--accent); }
+        #cam-init-title { font-size: 0.75rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; }
+        #cam-init-sub { font-size: 0.52rem; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
+        #cam-init-prog { font-size: 0.52rem; color: var(--lime); text-transform: uppercase; letter-spacing: 1px; animation: pulse 1.2s infinite; display: none; }
 
+        /* Capture button — sits on right side of camera */
         #capture-btn {
-            position: absolute; bottom: 14px; left: 50%;
-            transform: translateX(-50%);
-            width: 62px; height: 62px; border-radius: 50%;
-            border: 3.5px solid rgba(255,255,255,0.9);
+            position: absolute; bottom: 10px; right: 14px;
+            width: 52px; height: 52px; border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.9);
             background: transparent; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
             transition: transform 0.1s;
         }
-        #capture-btn:active { transform: translateX(-50%) scale(0.9); }
+        #capture-btn:active { transform: scale(0.9); }
         #capture-btn.disabled { opacity: 0.25; pointer-events: none; }
-        .capture-inner { width: 48px; height: 48px; border-radius: 50%; background: #fff; }
+        .capture-inner { width: 40px; height: 40px; border-radius: 50%; background: #fff; }
 
         /* ── BOTTOM PANEL ── */
         #bottom-panel { flex: 1; display: flex; flex-direction: column; background: var(--card); overflow: hidden; min-height: 0; }
 
         /* Thumbnails */
-        #thumb-section { padding: 8px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        #thumb-section { padding: 7px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
         #thumb-label {
-            font-size: 0.48rem; font-weight: 700; color: var(--dim);
-            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+            font-size: 0.46rem; font-weight: 700; color: var(--dim);
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;
             display: flex; justify-content: space-between;
         }
         #thumb-label span { color: var(--accent); }
         #thumb-row { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 2px; }
         #thumb-row::-webkit-scrollbar { display: none; }
         .thumb {
-            width: 54px; height: 42px; border-radius: 7px;
+            width: 56px; height: 44px; border-radius: 7px;
             background: var(--card2); border: 1.5px solid var(--border2);
             flex-shrink: 0; position: relative; overflow: hidden;
             cursor: pointer; transition: border-color 0.15s;
@@ -137,7 +146,7 @@
             background: rgba(255,77,77,0.85); color: #fff;
             font-size: 8px; font-weight: 900;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
+            cursor: pointer; z-index: 10;
         }
         .thumb-empty {
             display: flex; align-items: center;
@@ -146,10 +155,10 @@
         }
 
         /* Stage grid */
-        #stage-section { padding: 8px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        #stage-section { padding: 7px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
         #stage-label {
-            font-size: 0.48rem; font-weight: 700; color: var(--dim);
-            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+            font-size: 0.46rem; font-weight: 700; color: var(--dim);
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;
             display: flex; justify-content: space-between;
         }
         #stage-label span { color: var(--accent); }
@@ -157,7 +166,7 @@
         .stage-btn {
             background: var(--card2); border: 1px solid var(--border2);
             border-radius: 8px; color: var(--text);
-            font-size: 0.7rem; font-weight: 900;
+            font-size: 0.68rem; font-weight: 900;
             padding: 8px 0; cursor: pointer;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
@@ -176,7 +185,7 @@
         }
         .act-btn {
             flex: 1; padding: 12px; border-radius: 10px; border: none;
-            font-weight: 900; font-size: 0.68rem;
+            font-weight: 900; font-size: 0.65rem;
             text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 5px;
             transition: opacity 0.15s;
@@ -241,7 +250,7 @@
 <div id="drive-screen">
     <i class="bi bi-cloud-fill"></i>
     <h2>Connect Google Drive</h2>
-    <p>Photos save directly to Google Drive — nothing is stored on your phone.</p>
+    <p>Photos save directly to Google Drive — nothing stored on your phone.</p>
     <button id="connect-drive-btn" onclick="connectDrive()">
         <i class="bi bi-google"></i> Connect Drive
     </button>
@@ -258,6 +267,7 @@
         <div class="stage-pips" id="stagePips"></div>
     </div>
 
+    <!-- Rectangle camera — wide, short -->
     <div id="cam-wrap">
         <video id="webcam" autoplay playsinline muted></video>
         <div id="crosshair"></div>
@@ -266,7 +276,7 @@
         <div id="cam-init" onclick="startCamera()">
             <i class="bi bi-camera-fill"></i>
             <div id="cam-init-title">Tap to Start Camera</div>
-            <div id="cam-init-sub">Point at banana box</div>
+            <div id="cam-init-sub">Point at open banana box</div>
             <div id="cam-init-prog"></div>
         </div>
         <button id="capture-btn" class="disabled" onclick="capturePhoto()">
@@ -322,6 +332,7 @@ let stageFolderIds = {};
 let photoCounts    = {};
 let selectedStage  = null;
 let cameraReady    = false;
+let cameraStream   = null;
 let captures       = [];
 let selectedIds    = new Set();
 
@@ -383,16 +394,17 @@ async function startCamera() {
     prog.innerText = 'Requesting camera...';
 
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({
+        cameraStream = await navigator.mediaDevices.getUserMedia({
             video: {
                 facingMode: { ideal: 'environment' },
-                width: { ideal: 1280 },
-                height: { ideal: 960 }
+                width: { ideal: 1920 },
+                height: { ideal: 1080 },
+                aspectRatio: { ideal: 16/9 }
             },
             audio: false
         });
         const vid = document.getElementById('webcam');
-        vid.srcObject = stream;
+        vid.srcObject = cameraStream;
         await new Promise(r => { vid.onloadedmetadata = r; });
         vid.play();
         init.classList.add('hidden');
@@ -405,6 +417,21 @@ async function startCamera() {
             ? 'Camera blocked — AA menu > Website Settings > Camera > Allow'
             : 'Camera error: ' + err.message;
     }
+}
+
+function restartCamera() {
+    // Properly restart camera after clear
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+    }
+    cameraReady = false;
+    const vid = document.getElementById('webcam');
+    vid.srcObject = null;
+    document.getElementById('capture-btn').classList.add('disabled');
+
+    // Short delay then restart
+    setTimeout(() => startCamera(), 300);
 }
 
 // ── CAPTURE ───────────────────────────────────────────────────
@@ -421,7 +448,7 @@ function capturePhoto() {
     canvas.getContext('2d').drawImage(vid, 0, 0);
 
     canvas.toBlob(blob => {
-        const id = 'cap_' + Date.now();
+        const id = 'cap_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
         const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
         captures.push({ id, dataUrl, blob, stage: selectedStage });
         selectedIds.add(id);
@@ -447,13 +474,34 @@ function selectStage(stage) {
     if (cameraReady) document.getElementById('capture-btn').classList.remove('disabled');
 }
 
-// ── ASSIGN STAGE TO SELECTED THUMBS ──────────────────────────
+// ── ASSIGN STAGE ──────────────────────────────────────────────
 function assignStage() {
     if (!selectedStage) { setStatus('Select a color stage first!', 'err'); return; }
     if (selectedIds.size === 0) { setStatus('Select photos first!', 'err'); return; }
     captures.forEach(c => { if (selectedIds.has(c.id)) c.stage = selectedStage; });
     renderThumbs();
     setStatus(`Assigned Color ${selectedStage} to ${selectedIds.size} photo(s)`, 'ready');
+}
+
+// ── DELETE SINGLE CAPTURE ─────────────────────────────────────
+function deleteCapture(id) {
+    captures = captures.filter(c => c.id !== id);
+    selectedIds.delete(id);
+    renderThumbs();
+    updateUploadBtn();
+    setStatus(`Photo removed — ${captures.length} remaining`, captures.length > 0 ? 'ready' : '');
+}
+
+// ── CLEAR ALL — fixed: restarts camera properly ───────────────
+function clearCaptures() {
+    if (captures.length === 0) return;
+    if (!confirm('Clear all captured photos?')) return;
+    captures = [];
+    selectedIds.clear();
+    renderThumbs();
+    updateUploadBtn();
+    setStatus('Cleared — restarting camera...', 'busy');
+    restartCamera(); // ← Fix: properly restart camera
 }
 
 // ── UPLOAD ALL ────────────────────────────────────────────────
@@ -602,22 +650,6 @@ function renderThumbs() {
 function toggleThumb(id) {
     if (selectedIds.has(id)) selectedIds.delete(id);
     else selectedIds.add(id);
-    renderThumbs();
-    updateUploadBtn();
-}
-
-function deleteCapture(id) {
-    captures = captures.filter(c => c.id !== id);
-    selectedIds.delete(id);
-    renderThumbs();
-    updateUploadBtn();
-}
-
-function clearCaptures() {
-    if (captures.length === 0) return;
-    if (!confirm('Clear all captured photos?')) return;
-    captures = [];
-    selectedIds.clear();
     renderThumbs();
     updateUploadBtn();
 }
