@@ -3,467 +3,663 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pulp Pro | Banana Brain</title>
+    <title>Banana Brain</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
     <style>
         :root {
             --bg: #000;
             --card: #111;
+            --card2: #1a1a1a;
             --border: #222;
+            --border2: #2a2a2a;
             --accent: #f9d71c;
             --lime: #a6e22e;
             --red: #ff4d4d;
-            --text-dim: #666;
+            --dim: #555;
+            --text: #fff;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            background: var(--bg); color: #fff;
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html, body {
+            background: var(--bg); color: var(--text);
             font-family: -apple-system, sans-serif;
-            height: 100dvh; display: flex; flex-direction: column;
-            overflow: hidden;
+            height: 100%; overflow: hidden;
         }
+        body { display: flex; flex-direction: column; height: 100dvh; }
 
-        /* VIDEO */
-        #video-container {
+        /* ── MAIN APP ── */
+        #app { display: flex; flex-direction: column; height: 100dvh; }
+
+        /* ── HEADER ── */
+        .header {
+            background: var(--card); padding: 10px 14px 8px;
+            border-bottom: 1px solid var(--border); flex-shrink: 0;
+        }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .app-title { font-size: 0.72rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
+        .app-status { font-size: 0.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+        .app-status.ready { color: var(--lime); }
+        .app-status.busy { color: var(--accent); animation: pulse 1.2s infinite; }
+        .app-status.err { color: var(--red); }
+        .stage-pips { display: flex; gap: 3px; }
+        .pip { flex: 1; height: 3px; border-radius: 3px; background: var(--border2); transition: background 0.3s; }
+        .pip.done { background: var(--accent); }
+        .pip.active { background: #fff; }
+
+        /* ── CAMERA ── */
+        #cam-wrap {
             position: relative; width: 100%;
-            height: 38vh; background: #111; flex-shrink: 0;
+            height: 52vh; background: #000;
+            flex-shrink: 0; overflow: hidden;
         }
-        #webcam {
-            width: 100%; height: 100%; object-fit: cover; display: block;
-        }
+        #webcam { width: 100%; height: 100%; object-fit: cover; display: block; }
         #crosshair {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 80px; height: 80px;
-            border: 2px solid var(--accent);
+            width: 55%; height: 55%;
+            border: 2px solid rgba(249,215,28,0.65);
             border-radius: 12px; pointer-events: none;
         }
-        #prediction-bar {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            background: rgba(0,0,0,0.7); padding: 8px 14px;
-            display: flex; align-items: center; justify-content: space-between;
+        #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity 0.08s; }
+        #stage-overlay {
+            position: absolute; top: 12px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.72);
+            border: 1px solid var(--accent);
+            padding: 5px 14px; border-radius: 20px;
+            font-size: 0.6rem; font-weight: 900;
+            color: var(--accent); text-transform: uppercase;
+            letter-spacing: 2px; white-space: nowrap; display: none;
         }
-        #prediction-label {
-            font-size: 0.75rem; font-weight: 900;
-            text-transform: uppercase; letter-spacing: 2px; color: var(--accent);
+        #cam-init {
+            position: absolute; inset: 0; background: #000;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 10px; cursor: pointer;
         }
-        #confidence-bar-wrap {
-            flex: 1; margin: 0 12px; height: 4px;
-            background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;
-        }
-        #confidence-bar {
-            height: 100%; background: var(--accent);
-            border-radius: 4px; width: 0%; transition: width 0.2s;
-        }
-        #confidence-pct {
-            font-size: 0.6rem; font-weight: 900; color: var(--text-dim);
-        }
+        #cam-init.hidden { display: none; }
+        #cam-init i { font-size: 2.5rem; color: var(--accent); }
+        #cam-init-title { font-size: 0.8rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; }
+        #cam-init-sub { font-size: 0.55rem; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
+        #cam-init-prog { font-size: 0.55rem; color: var(--lime); text-transform: uppercase; letter-spacing: 1px; animation: pulse 1.2s infinite; display: none; }
 
-        /* INIT OVERLAY */
-        #init-overlay {
-            position: absolute; inset: 0; z-index: 100;
-            background: #000; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; gap: 12px;
+        #capture-btn {
+            position: absolute; bottom: 14px; left: 50%;
+            transform: translateX(-50%);
+            width: 62px; height: 62px; border-radius: 50%;
+            border: 3.5px solid rgba(255,255,255,0.9);
+            background: transparent; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.1s;
+        }
+        #capture-btn:active { transform: translateX(-50%) scale(0.9); }
+        #capture-btn.disabled { opacity: 0.25; pointer-events: none; }
+        .capture-inner { width: 48px; height: 48px; border-radius: 50%; background: #fff; }
+
+        /* ── BOTTOM PANEL ── */
+        #bottom-panel { flex: 1; display: flex; flex-direction: column; background: var(--card); overflow: hidden; min-height: 0; }
+
+        /* Thumbnails */
+        #thumb-section { padding: 8px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        #thumb-label {
+            font-size: 0.48rem; font-weight: 700; color: var(--dim);
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+            display: flex; justify-content: space-between;
+        }
+        #thumb-label span { color: var(--accent); }
+        #thumb-row { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 2px; }
+        #thumb-row::-webkit-scrollbar { display: none; }
+        .thumb {
+            width: 54px; height: 42px; border-radius: 7px;
+            background: var(--card2); border: 1.5px solid var(--border2);
+            flex-shrink: 0; position: relative; overflow: hidden;
+            cursor: pointer; transition: border-color 0.15s;
+        }
+        .thumb.selected { border-color: var(--accent); }
+        .thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .thumb-badge {
+            position: absolute; bottom: 2px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.82);
+            border-radius: 4px; padding: 1px 5px;
+            font-size: 7px; font-weight: 900;
+            color: var(--accent); white-space: nowrap;
+        }
+        .thumb-check {
+            position: absolute; top: 2px; right: 2px;
+            width: 14px; height: 14px; border-radius: 50%;
+            background: var(--accent); color: #000;
+            font-size: 8px; font-weight: 900;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .thumb-del {
+            position: absolute; top: 2px; left: 2px;
+            width: 14px; height: 14px; border-radius: 50%;
+            background: rgba(255,77,77,0.85); color: #fff;
+            font-size: 8px; font-weight: 900;
+            display: flex; align-items: center; justify-content: center;
             cursor: pointer;
         }
-        #init-overlay.hidden { display: none; }
-        #init-icon { font-size: 3rem; color: var(--accent); }
-        #init-title { font-size: 1rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; }
-        #init-sub { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
-        #init-progress {
-            font-size: 0.55rem; color: var(--lime);
-            text-transform: uppercase; letter-spacing: 1px;
-            animation: pulse 1.5s infinite;
+        .thumb-empty {
+            display: flex; align-items: center;
+            justify-content: center;
+            font-size: 18px; color: rgba(255,255,255,0.1);
         }
 
-        /* CONTROLS */
-        .controls {
-            flex: 1; padding: 10px 10px 0; background: #0a0a0a;
-            display: flex; flex-direction: column; gap: 8px; overflow: hidden;
+        /* Stage grid */
+        #stage-section { padding: 8px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        #stage-label {
+            font-size: 0.48rem; font-weight: 700; color: var(--dim);
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+            display: flex; justify-content: space-between;
         }
-
-        /* STATUS */
-        #status-msg {
-            text-align: center; font-size: 0.55rem; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 2px; color: var(--text-dim);
-            padding: 4px;
-        }
-        #status-msg.online { color: var(--lime); }
-        #status-msg.error { color: var(--red); }
-
-        /* STAGE GRID */
-        #train-grid {
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
-            flex: 1;
-        }
+        #stage-label span { color: var(--accent); }
+        #stage-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
         .stage-btn {
-            background: var(--card); border: 1px solid var(--border);
-            border-radius: 10px; color: #fff; font-size: 0.85rem;
-            font-weight: 900; padding: 0; cursor: pointer;
+            background: var(--card2); border: 1px solid var(--border2);
+            border-radius: 8px; color: var(--text);
+            font-size: 0.7rem; font-weight: 900;
+            padding: 8px 0; cursor: pointer;
             display: flex; flex-direction: column;
-            align-items: center; justify-content: center; gap: 3px;
-            transition: border-color 0.15s, background 0.15s;
-            min-height: 52px;
+            align-items: center; justify-content: center;
+            gap: 1px; transition: all 0.12s;
         }
-        .stage-btn:active { background: rgba(249,215,28,0.1); border-color: var(--accent); }
-        .stage-btn.has-data { border-color: rgba(249,215,28,0.4); }
-        .count-badge {
-            font-size: 0.5rem; color: var(--accent); font-weight: 700;
-            letter-spacing: 0.5px;
+        .stage-btn:active { transform: scale(0.93); }
+        .stage-btn.selected { background: rgba(249,215,28,0.14); border-color: var(--accent); color: var(--accent); }
+        .stage-btn.has-data { border-color: rgba(249,215,28,0.35); }
+        .s-count { font-size: 0.42rem; color: var(--accent); font-weight: 700; }
+
+        /* Action bar */
+        #action-bar {
+            display: flex; gap: 6px;
+            padding: 8px 10px max(env(safe-area-inset-bottom), 10px);
+            flex-shrink: 0;
+        }
+        .act-btn {
+            flex: 1; padding: 12px; border-radius: 10px; border: none;
+            font-weight: 900; font-size: 0.68rem;
+            text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+            transition: opacity 0.15s;
+        }
+        .act-btn:active { opacity: 0.7; }
+        #assign-btn { background: var(--card2); color: var(--text); border: 1px solid var(--border2); }
+        #upload-btn { background: var(--accent); color: #000; }
+        #upload-btn.disabled { opacity: 0.3; pointer-events: none; }
+        #stats-btn { flex: 0 0 auto; padding: 12px 14px; background: var(--card2); color: var(--text); border: 1px solid var(--border2); border-radius: 10px; cursor: pointer; font-size: 1rem; }
+
+        /* ── DRIVE CONNECT SCREEN ── */
+        #drive-screen {
+            position: fixed; inset: 0; background: #000;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 16px; z-index: 100; padding: 30px;
+        }
+        #drive-screen.hidden { display: none; }
+        #drive-screen i { font-size: 3rem; color: #4285f4; }
+        #drive-screen h2 { font-size: 0.9rem; font-weight: 900; color: #fff; letter-spacing: 2px; text-align: center; }
+        #drive-screen p { font-size: 0.6rem; color: var(--dim); text-align: center; line-height: 1.6; }
+        #connect-drive-btn {
+            background: #4285f4; color: #fff; border: none;
+            padding: 16px 32px; border-radius: 100px;
+            font-weight: 900; font-size: 0.8rem;
+            text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+            display: flex; align-items: center; gap: 8px;
         }
 
-        /* ACTION BAR */
-        .action-bar {
-            display: flex; gap: 8px; padding-bottom: env(safe-area-inset-bottom, 10px);
-            padding-bottom: max(env(safe-area-inset-bottom), 10px);
+        /* ── STATS PANEL ── */
+        #stats-panel {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.96);
+            z-index: 200; display: flex; flex-direction: column;
+            padding: 20px 16px;
         }
-        .btn {
-            flex: 1; padding: 14px; border-radius: 12px; border: none;
-            font-weight: 900; font-size: 0.75rem; text-transform: uppercase;
-            letter-spacing: 1px; cursor: pointer; transition: opacity 0.2s;
+        #stats-panel.hidden { display: none; }
+        .stats-title { font-size: 0.7rem; font-weight: 900; color: var(--accent); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px; }
+        .stats-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; }
+        .stats-row {
+            display: flex; align-items: center; gap: 10px;
+            background: var(--card2); border: 1px solid var(--border2);
+            border-radius: 10px; padding: 10px 12px;
         }
-        .btn:active { opacity: 0.7; }
-        #undo-btn { background: var(--card); color: #fff; border: 1px solid var(--border); }
-        #sync-btn { background: var(--accent); color: #000; }
-        #sync-btn.loading { opacity: 0.6; pointer-events: none; }
+        .stats-stage { font-size: 0.8rem; font-weight: 900; min-width: 34px; }
+        .stats-bar-wrap { flex: 1; height: 5px; background: var(--border2); border-radius: 5px; overflow: hidden; }
+        .stats-bar { height: 100%; background: var(--accent); border-radius: 5px; }
+        .stats-count { font-size: 0.6rem; font-weight: 900; color: var(--accent); min-width: 52px; text-align: right; }
+        .stats-total { font-size: 0.55rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; text-align: center; }
+        #close-stats {
+            margin-top: 12px; padding: 14px; border-radius: 10px;
+            background: var(--card2); border: 1px solid var(--border2);
+            color: var(--text); font-weight: 900; font-size: 0.72rem;
+            text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+        }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
     </style>
 </head>
 <body>
 
-<div id="video-container">
-    <div id="init-overlay" onclick="startApp()">
-        <i class="bi bi-camera-fill" id="init-icon"></i>
-        <div id="init-title">BANANA BRAIN</div>
-        <div id="init-sub">Tap to start camera</div>
-        <div id="init-progress" style="display:none;">Loading AI model...</div>
-    </div>
-    <video id="webcam" autoplay playsinline muted></video>
-    <div id="crosshair"></div>
-    <div id="prediction-bar" style="display:none;">
-        <div id="prediction-label">—</div>
-        <div id="confidence-bar-wrap"><div id="confidence-bar"></div></div>
-        <div id="confidence-pct">—</div>
-    </div>
+<!-- Google Drive Connect Screen -->
+<div id="drive-screen">
+    <i class="bi bi-cloud-fill"></i>
+    <h2>Connect Google Drive</h2>
+    <p>Photos save directly to Google Drive — nothing is stored on your phone.</p>
+    <button id="connect-drive-btn" onclick="connectDrive()">
+        <i class="bi bi-google"></i> Connect Drive
+    </button>
 </div>
 
-<div class="controls">
-    <div id="status-msg">TAP CAMERA TO START</div>
+<!-- Main App -->
+<div id="app">
 
-    <div id="train-grid">
-        <button class="stage-btn" id="btn-1"   onclick="addSample('1')">  1   <span class="count-badge" id="c1">0</span></button>
-        <button class="stage-btn" id="btn-1.5" onclick="addSample('1.5')">1.5 <span class="count-badge" id="c1.5">0</span></button>
-        <button class="stage-btn" id="btn-2"   onclick="addSample('2')">  2   <span class="count-badge" id="c2">0</span></button>
-        <button class="stage-btn" id="btn-2.5" onclick="addSample('2.5')">2.5 <span class="count-badge" id="c2.5">0</span></button>
-        <button class="stage-btn" id="btn-3"   onclick="addSample('3')">  3   <span class="count-badge" id="c3">0</span></button>
-        <button class="stage-btn" id="btn-3.5" onclick="addSample('3.5')">3.5 <span class="count-badge" id="c3.5">0</span></button>
-        <button class="stage-btn" id="btn-4"   onclick="addSample('4')">  4   <span class="count-badge" id="c4">0</span></button>
-        <button class="stage-btn" id="btn-4.5" onclick="addSample('4.5')">4.5 <span class="count-badge" id="c4.5">0</span></button>
-        <button class="stage-btn" id="btn-5"   onclick="addSample('5')">  5   <span class="count-badge" id="c5">0</span></button>
-        <button class="stage-btn" id="btn-5.5" onclick="addSample('5.5')">5.5 <span class="count-badge" id="c5.5">0</span></button>
-        <button class="stage-btn" id="btn-6"   onclick="addSample('6')">  6   <span class="count-badge" id="c6">0</span></button>
-        <button class="stage-btn" style="background:#1a0000; border-color:#330000;" onclick="confirmClear()">
-            CLEAR<span class="count-badge" style="color:var(--red);">ALL</span>
+    <div class="header">
+        <div class="header-row">
+            <div class="app-title">🍌 Banana Brain</div>
+            <div class="app-status" id="appStatus">Starting...</div>
+        </div>
+        <div class="stage-pips" id="stagePips"></div>
+    </div>
+
+    <div id="cam-wrap">
+        <video id="webcam" autoplay playsinline muted></video>
+        <div id="crosshair"></div>
+        <div id="flash"></div>
+        <div id="stage-overlay"></div>
+        <div id="cam-init" onclick="startCamera()">
+            <i class="bi bi-camera-fill"></i>
+            <div id="cam-init-title">Tap to Start Camera</div>
+            <div id="cam-init-sub">Point at banana box</div>
+            <div id="cam-init-prog"></div>
+        </div>
+        <button id="capture-btn" class="disabled" onclick="capturePhoto()">
+            <div class="capture-inner"></div>
         </button>
     </div>
 
-    <div class="action-bar">
-        <button class="btn" id="undo-btn" onclick="undoLast()">↩ Undo Last</button>
-        <button class="btn" id="sync-btn" onclick="syncToGithub()">☁ Sync Cloud</button>
+    <div id="bottom-panel">
+
+        <div id="thumb-section">
+            <div id="thumb-label">Photos <span id="selectedCount"></span></div>
+            <div id="thumb-row"></div>
+        </div>
+
+        <div id="stage-section">
+            <div id="stage-label">Select color stage <span id="stageInfo"></span></div>
+            <div id="stage-grid"></div>
+        </div>
+
+        <div id="action-bar">
+            <button class="act-btn" id="assign-btn" onclick="assignStage()">
+                <i class="bi bi-tag-fill"></i> Assign Color
+            </button>
+            <button class="act-btn disabled" id="upload-btn" onclick="uploadAll()">
+                <i class="bi bi-cloud-upload-fill"></i> Upload All
+            </button>
+            <button id="stats-btn" onclick="showStats()">
+                <i class="bi bi-bar-chart-fill"></i>
+            </button>
+        </div>
+
     </div>
 </div>
 
+<!-- Stats Panel -->
+<div id="stats-panel" class="hidden">
+    <div class="stats-title">📊 Training Stats</div>
+    <div class="stats-list" id="statsList"></div>
+    <div class="stats-total" id="statsTotal"></div>
+    <button id="close-stats" onclick="hideStats()">← Back</button>
+</div>
+
 <script>
-    // ── CONFIG ──────────────────────────────────────────────
-    // IMPORTANT: Replace with your new token after revoking the old one
-    const GH_TOKEN = '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';
-    const GH_REPO  = 'PulpPro/banana-brain';
-    const GH_PATH  = 'scanner/banana_brain.json';
-    // ────────────────────────────────────────────────────────
+const CLIENT_ID    = '491662852792-0aplippkbgi2upk9qour1hvomcfb11ta.apps.googleusercontent.com';
+const REDIRECT_URI = window.location.origin + window.location.pathname;
+const SCOPES       = 'https://www.googleapis.com/auth/drive.file';
+const FOLDER_NAME  = 'banana-brain';
+const STAGES       = ['1','1.5','2','2.5','3','3.5','4','4.5','5','5.5','6'];
 
-    const LABELS = ['1','1.5','2','2.5','3','3.5','4','4.5','5','5.5','6'];
+let accessToken    = null;
+let rootFolderId   = null;
+let stageFolderIds = {};
+let photoCounts    = {};
+let selectedStage  = null;
+let cameraReady    = false;
+let captures       = [];
+let selectedIds    = new Set();
 
-    let classifier  = null;
-    let mobileNetModel = null;  // Fixed: renamed from 'mobilenet' to avoid conflict
-    let webcamEl    = document.getElementById('webcam');
-    let isReady     = false;
-    let isPredicting = false;
+STAGES.forEach(s => photoCounts[s] = 0);
 
-    // Per-label sample history for proper undo (stores activation tensors)
-    const sampleHistory = {};
-    LABELS.forEach(l => sampleHistory[l] = []);
-    const counts = {};
-    LABELS.forEach(l => counts[l] = 0);
-
-    // ── START ────────────────────────────────────────────────
-    async function startApp() {
-        const overlay = document.getElementById('init-overlay');
-        const progress = document.getElementById('init-progress');
-        const sub = document.getElementById('init-sub');
-
-        sub.style.display = 'none';
-        progress.style.display = 'block';
-        progress.innerText = 'Requesting camera...';
-
-        try {
-            // Step 1 — camera
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: { ideal: 'environment' } },
-                audio: false
-            });
-            webcamEl.srcObject = stream;
-            await new Promise(resolve => { webcamEl.onloadedmetadata = resolve; });
-            webcamEl.play();
-
-            progress.innerText = 'Loading AI model (this takes ~10s)...';
-
-            // Step 2 — load models
-            classifier = knnClassifier.create();
-            mobileNetModel = await mobilenet.load();
-
-            progress.innerText = 'Loading saved data from cloud...';
-
-            // Step 3 — load existing training data
-            await loadFromCloud();
-
-            // Step 4 — done
-            overlay.classList.add('hidden');
-            setStatus('AI ONLINE — POINT AT BANANA', 'online');
-
-            document.getElementById('prediction-bar').style.display = 'flex';
-            isReady = true;
-            predictLoop();
-
-        } catch (err) {
-            console.error(err);
-            progress.style.color = '#ff4d4d';
-            if (err.name === 'NotAllowedError') {
-                progress.innerText = 'Camera blocked. Open AA menu > Website Settings > Camera > Allow, then reload.';
-            } else {
-                progress.innerText = 'Error: ' + err.message;
-            }
+// ── BOOT ──────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token')) {
+        const hp = new URLSearchParams(hash.substring(1));
+        const token = hp.get('access_token');
+        if (token) {
+            accessToken = token;
+            window.history.replaceState({}, '', REDIRECT_URI);
+            launchApp(true);
+            return;
         }
     }
+    document.getElementById('drive-screen').classList.remove('hidden');
+});
 
-    // ── LOAD FROM GITHUB ─────────────────────────────────────
-    async function loadFromCloud() {
+// ── OAUTH ─────────────────────────────────────────────────────
+function connectDrive() {
+    const url = 'https://accounts.google.com/o/oauth2/v2/auth'
+        + '?client_id=' + encodeURIComponent(CLIENT_ID)
+        + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI)
+        + '&response_type=token'
+        + '&scope=' + encodeURIComponent(SCOPES);
+    window.location.href = url;
+}
+
+// ── LAUNCH ────────────────────────────────────────────────────
+async function launchApp(hasDrive) {
+    document.getElementById('drive-screen').classList.add('hidden');
+    document.getElementById('app').style.display = 'flex';
+    buildStageGrid();
+    buildPips();
+    renderThumbs();
+
+    if (hasDrive) {
+        setStatus('Setting up Drive folders...', 'busy');
         try {
-            const res = await fetch(
-                `https://raw.githubusercontent.com/${GH_REPO}/main/${GH_PATH}?t=${Date.now()}`
-            );
-            if (!res.ok) return; // no data yet — that's fine
-
-            const data = await res.json();
-            const tensorDataset = {};
-
-            Object.keys(data).forEach(label => {
-                const flat = data[label];
-                const numSamples = Math.floor(flat.length / 1024);
-                if (numSamples === 0) return;
-                tensorDataset[label] = tf.tensor2d(flat, [numSamples, 1024]);
-                counts[label] = numSamples;
-                updateCount(label);
-            });
-
-            classifier.setClassifierDataset(tensorDataset);
-            setStatus(`Cloud data loaded — ${classifier.getNumClasses()} classes`, 'online');
+            rootFolderId = await getOrCreateFolder(FOLDER_NAME, 'root');
+            await loadCounts();
+            setStatus('Drive ready — tap camera to start', 'ready');
         } catch (e) {
-            console.warn('No cloud data found, starting fresh.');
+            setStatus('Drive error: ' + e.message, 'err');
         }
     }
+}
 
-    // ── ADD SAMPLE ───────────────────────────────────────────
-    async function addSample(label) {
-        if (!isReady) {
-            setStatus('Wait for AI to load first', 'error');
-            return;
-        }
+// ── CAMERA ────────────────────────────────────────────────────
+async function startCamera() {
+    const init = document.getElementById('cam-init');
+    const prog = document.getElementById('cam-init-prog');
+    const sub  = document.getElementById('cam-init-sub');
+    sub.style.display = 'none';
+    prog.style.display = 'block';
+    prog.innerText = 'Requesting camera...';
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: { ideal: 'environment' },
+                width: { ideal: 1280 },
+                height: { ideal: 960 }
+            },
+            audio: false
+        });
+        const vid = document.getElementById('webcam');
+        vid.srcObject = stream;
+        await new Promise(r => { vid.onloadedmetadata = r; });
+        vid.play();
+        init.classList.add('hidden');
+        cameraReady = true;
+        if (selectedStage) document.getElementById('capture-btn').classList.remove('disabled');
+        setStatus('Camera ready — select a color stage', 'ready');
+    } catch (err) {
+        prog.style.color = 'var(--red)';
+        prog.innerText = err.name === 'NotAllowedError'
+            ? 'Camera blocked — AA menu > Website Settings > Camera > Allow'
+            : 'Camera error: ' + err.message;
+    }
+}
+
+// ── CAPTURE ───────────────────────────────────────────────────
+function capturePhoto() {
+    if (!cameraReady) return;
+    const flash = document.getElementById('flash');
+    flash.style.opacity = '1';
+    setTimeout(() => flash.style.opacity = '0', 120);
+
+    const vid = document.getElementById('webcam');
+    const canvas = document.createElement('canvas');
+    canvas.width = vid.videoWidth;
+    canvas.height = vid.videoHeight;
+    canvas.getContext('2d').drawImage(vid, 0, 0);
+
+    canvas.toBlob(blob => {
+        const id = 'cap_' + Date.now();
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+        captures.push({ id, dataUrl, blob, stage: selectedStage });
+        selectedIds.add(id);
+        renderThumbs();
+        updateUploadBtn();
+        setStatus(`Photo captured — ${captures.length} in session`, 'ready');
+    }, 'image/jpeg', 0.88);
+}
+
+// ── STAGE SELECTION ───────────────────────────────────────────
+function selectStage(stage) {
+    selectedStage = stage;
+    STAGES.forEach(s => {
+        const btn = document.getElementById('sb-' + s.replace('.','_'));
+        if (btn) btn.classList.toggle('selected', s === stage);
+        const pip = document.getElementById('pip-' + s.replace('.','_'));
+        if (pip) pip.classList.toggle('active', s === stage);
+    });
+    const ov = document.getElementById('stage-overlay');
+    ov.innerText = 'Color ' + stage + ' selected';
+    ov.style.display = 'block';
+    document.getElementById('stageInfo').innerText = '· C' + stage + ' (' + (photoCounts[stage] || 0) + ' saved)';
+    if (cameraReady) document.getElementById('capture-btn').classList.remove('disabled');
+}
+
+// ── ASSIGN STAGE TO SELECTED THUMBS ──────────────────────────
+function assignStage() {
+    if (!selectedStage) { setStatus('Select a color stage first!', 'err'); return; }
+    if (selectedIds.size === 0) { setStatus('Select photos first!', 'err'); return; }
+    captures.forEach(c => { if (selectedIds.has(c.id)) c.stage = selectedStage; });
+    renderThumbs();
+    setStatus(`Assigned Color ${selectedStage} to ${selectedIds.size} photo(s)`, 'ready');
+}
+
+// ── UPLOAD ALL ────────────────────────────────────────────────
+async function uploadAll() {
+    const toUpload = captures.filter(c => c.stage);
+    if (toUpload.length === 0) { setStatus('Assign a color stage to photos first!', 'err'); return; }
+    if (!accessToken) { setStatus('Not connected to Drive!', 'err'); return; }
+
+    const btn = document.getElementById('upload-btn');
+    btn.classList.add('disabled');
+    setStatus('Uploading to Google Drive...', 'busy');
+
+    let uploaded = 0;
+    for (const cap of toUpload) {
         try {
-            const imgTensor = tf.browser.fromPixels(webcamEl);
-            const activation = mobileNetModel.infer(imgTensor, 'conv_preds');
-
-            // Keep a copy for undo
-            sampleHistory[label].push(activation.clone());
-
-            classifier.addExample(activation, label);
-            counts[label]++;
-            updateCount(label);
-
-            imgTensor.dispose();
-            activation.dispose();
-
-            setStatus(`✓ Added sample for Color ${label} (total: ${counts[label]})`, 'online');
+            const folderId = await getOrCreateStageFolder(cap.stage);
+            const filename = `color_${cap.stage}_${Date.now()}_${uploaded}.jpg`;
+            await uploadFile(cap.blob, filename, folderId);
+            photoCounts[cap.stage] = (photoCounts[cap.stage] || 0) + 1;
+            updateCount(cap.stage);
+            uploaded++;
+            setStatus(`Uploading... ${uploaded}/${toUpload.length}`, 'busy');
         } catch (e) {
-            setStatus('Capture failed — ' + e.message, 'error');
+            setStatus('Upload failed: ' + e.message, 'err');
+            btn.classList.remove('disabled');
+            return;
         }
     }
 
-    // ── UNDO LAST ────────────────────────────────────────────
-    // Proper undo: rebuilds the class without the last sample
-    function undoLast() {
-        // Find the label that was most recently added to
-        let lastLabel = null;
-        let lastHistory = null;
+    captures = captures.filter(c => !c.stage);
+    selectedIds.clear();
+    renderThumbs();
+    updateUploadBtn();
+    setStatus(`✓ ${uploaded} photos saved to Google Drive!`, 'ready');
+    btn.classList.remove('disabled');
+}
 
-        LABELS.forEach(label => {
-            if (sampleHistory[label].length > 0) {
-                if (!lastLabel || sampleHistory[label].length > (lastHistory || 0)) {
-                    lastLabel = label;
-                    lastHistory = sampleHistory[label].length;
-                }
-            }
-        });
-
-        if (!lastLabel) {
-            setStatus('Nothing to undo', 'error');
-            return;
-        }
-
-        // Remove last tensor from history
-        const removedTensor = sampleHistory[lastLabel].pop();
-        if (removedTensor) removedTensor.dispose();
-
-        // Rebuild the class from remaining history
-        classifier.clearClass(lastLabel);
-        sampleHistory[lastLabel].forEach(t => {
-            classifier.addExample(t.clone(), lastLabel);
-        });
-
-        counts[lastLabel] = Math.max(0, counts[lastLabel] - 1);
-        updateCount(lastLabel);
-        setStatus(`Undone: removed 1 sample from Color ${lastLabel}`, '');
+// ── GOOGLE DRIVE API ──────────────────────────────────────────
+async function driveRequest(url, options = {}) {
+    const res = await fetch(url, {
+        ...options,
+        headers: { 'Authorization': 'Bearer ' + accessToken, ...(options.headers || {}) }
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error?.message || 'Drive error ' + res.status);
     }
+    return res.json();
+}
 
-    // ── CLEAR ALL ────────────────────────────────────────────
-    function confirmClear() {
-        if (!confirm('Clear ALL training data? This cannot be undone.')) return;
-        LABELS.forEach(label => {
-            sampleHistory[label].forEach(t => t.dispose());
-            sampleHistory[label] = [];
-            classifier.clearClass(label);
-            counts[label] = 0;
-            updateCount(label);
-        });
-        setStatus('All data cleared', 'error');
-    }
+async function getOrCreateFolder(name, parentId) {
+    const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`;
+    const search = await driveRequest(
+        `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)`
+    );
+    if (search.files && search.files.length > 0) return search.files[0].id;
+    const created = await driveRequest('https://www.googleapis.com/drive/v3/files', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] })
+    });
+    return created.id;
+}
 
-    // ── PREDICT LOOP ─────────────────────────────────────────
-    async function predictLoop() {
-        if (!isReady) return;
+async function getOrCreateStageFolder(stage) {
+    if (stageFolderIds[stage]) return stageFolderIds[stage];
+    const id = await getOrCreateFolder('stage-' + stage, rootFolderId);
+    stageFolderIds[stage] = id;
+    return id;
+}
 
-        if (classifier.getNumClasses() > 0) {
-            try {
-                const imgTensor = tf.browser.fromPixels(webcamEl);
-                const activation = mobileNetModel.infer(imgTensor, 'conv_preds');
-                const result = await classifier.predictClass(activation);
+async function uploadFile(blob, filename, folderId) {
+    const meta = JSON.stringify({ name: filename, parents: [folderId] });
+    const form = new FormData();
+    form.append('metadata', new Blob([meta], { type: 'application/json' }));
+    form.append('file', blob);
+    const res = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        { method: 'POST', headers: { 'Authorization': 'Bearer ' + accessToken }, body: form }
+    );
+    if (!res.ok) throw new Error('Upload failed ' + res.status);
+    return res.json();
+}
 
-                const label = result.label;
-                const confidence = result.confidences[label] || 0;
-
-                document.getElementById('prediction-label').innerText = 'Color ' + label;
-                document.getElementById('confidence-bar').style.width = (confidence * 100) + '%';
-                document.getElementById('confidence-pct').innerText = Math.round(confidence * 100) + '%';
-
-                imgTensor.dispose();
-                activation.dispose();
-            } catch (e) {}
-        }
-
-        requestAnimationFrame(predictLoop);
-    }
-
-    // ── SYNC TO GITHUB ───────────────────────────────────────
-    async function syncToGithub() {
-        if (!isReady) {
-            setStatus('AI not ready yet', 'error');
-            return;
-        }
-        if (classifier.getNumClasses() === 0) {
-            setStatus('No training data to sync', 'error');
-            return;
-        }
-        if (GH_TOKEN === 'YOUR_NEW_TOKEN_HERE') {
-            setStatus('Add your GitHub token first!', 'error');
-            return;
-        }
-
-        const btn = document.getElementById('sync-btn');
-        btn.innerText = '⏳ Syncing...';
-        btn.classList.add('loading');
-
+async function loadCounts() {
+    for (const stage of STAGES) {
         try {
-            // Serialize classifier data
-            const dataset = classifier.getClassifierDataset();
-            const datasetObj = {};
-            Object.keys(dataset).forEach(key => {
-                datasetObj[key] = Array.from(dataset[key].dataSync());
-            });
-
-            const content = btoa(unescape(encodeURIComponent(JSON.stringify(datasetObj))));
-
-            // Get existing file SHA (needed for update)
-            let sha = null;
-            const getFile = await fetch(
-                `https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`,
-                { headers: { 'Authorization': `token ${GH_TOKEN}` } }
+            const folderId = await getOrCreateStageFolder(stage);
+            const q = `'${folderId}' in parents and trashed=false`;
+            const res = await driveRequest(
+                `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)`
             );
-            if (getFile.ok) {
-                const fileData = await getFile.json();
-                sha = fileData.sha;
-            }
+            photoCounts[stage] = res.files ? res.files.length : 0;
+            updateCount(stage);
+        } catch (e) {}
+    }
+}
 
-            // Push to GitHub
-            const push = await fetch(
-                `https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`,
-                {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${GH_TOKEN}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: `Banana Brain update — ${new Date().toISOString()}`,
-                        content: content,
-                        sha: sha
-                    })
-                }
-            );
+// ── UI HELPERS ────────────────────────────────────────────────
+function buildStageGrid() {
+    document.getElementById('stage-grid').innerHTML = STAGES.map(s => `
+        <button class="stage-btn" id="sb-${s.replace('.','_')}" onclick="selectStage('${s}')">
+            ${s}<span class="s-count" id="sc-${s.replace('.','_')}">${photoCounts[s]}</span>
+        </button>
+    `).join('') + `<button class="stage-btn" style="background:#1a0000;border-color:#330000;font-size:0.6rem;color:var(--red);" onclick="clearCaptures()">CLR<span class="s-count" style="color:var(--red);">ALL</span></button>`;
+}
 
-            if (push.ok) {
-                const total = LABELS.reduce((sum, l) => sum + counts[l], 0);
-                setStatus(`✓ Synced! ${total} total samples saved to cloud`, 'online');
-            } else {
-                const err = await push.json();
-                setStatus('Sync failed: ' + (err.message || push.status), 'error');
-            }
-        } catch (err) {
-            setStatus('Sync error: ' + err.message, 'error');
-        }
+function buildPips() {
+    document.getElementById('stagePips').innerHTML = STAGES.map(s =>
+        `<div class="pip" id="pip-${s.replace('.','_')}"></div>`
+    ).join('');
+}
 
-        btn.innerText = '☁ Sync Cloud';
-        btn.classList.remove('loading');
+function updateCount(stage) {
+    const key = stage.replace('.','_');
+    const el = document.getElementById('sc-' + key);
+    if (el) el.innerText = photoCounts[stage];
+    const btn = document.getElementById('sb-' + key);
+    if (btn) btn.classList.toggle('has-data', photoCounts[stage] > 0);
+    const pip = document.getElementById('pip-' + key);
+    if (pip) pip.classList.toggle('done', photoCounts[stage] > 0);
+}
+
+function renderThumbs() {
+    const row = document.getElementById('thumb-row');
+    const sel = selectedIds.size;
+    document.getElementById('selectedCount').innerText = sel > 0 ? `· ${sel} selected` : '';
+
+    if (captures.length === 0) {
+        row.innerHTML = Array(6).fill(0).map(() =>
+            `<div class="thumb thumb-empty">+</div>`
+        ).join('');
+        return;
     }
 
-    // ── HELPERS ──────────────────────────────────────────────
-    function setStatus(msg, type) {
-        const el = document.getElementById('status-msg');
-        el.innerText = msg;
-        el.className = type || '';
-    }
+    row.innerHTML = captures.map(c => `
+        <div class="thumb ${selectedIds.has(c.id) ? 'selected' : ''}" onclick="toggleThumb('${c.id}')">
+            <img class="thumb-img" src="${c.dataUrl}">
+            ${c.stage ? `<div class="thumb-badge">C${c.stage}</div>` : ''}
+            ${selectedIds.has(c.id) ? `<div class="thumb-check">✓</div>` : ''}
+            <div class="thumb-del" onclick="event.stopPropagation(); deleteCapture('${c.id}')">✕</div>
+        </div>
+    `).join('');
+}
 
-    function updateCount(label) {
-        const el = document.getElementById(`c${label}`);
-        if (el) el.innerText = counts[label];
-        const btn = document.getElementById(`btn-${label}`);
-        if (btn) btn.classList.toggle('has-data', counts[label] > 0);
-    }
+function toggleThumb(id) {
+    if (selectedIds.has(id)) selectedIds.delete(id);
+    else selectedIds.add(id);
+    renderThumbs();
+    updateUploadBtn();
+}
+
+function deleteCapture(id) {
+    captures = captures.filter(c => c.id !== id);
+    selectedIds.delete(id);
+    renderThumbs();
+    updateUploadBtn();
+}
+
+function clearCaptures() {
+    if (captures.length === 0) return;
+    if (!confirm('Clear all captured photos?')) return;
+    captures = [];
+    selectedIds.clear();
+    renderThumbs();
+    updateUploadBtn();
+}
+
+function updateUploadBtn() {
+    const ready = captures.filter(c => c.stage).length;
+    const btn = document.getElementById('upload-btn');
+    btn.classList.toggle('disabled', ready === 0);
+    btn.innerHTML = `<i class="bi bi-cloud-upload-fill"></i> Upload${ready > 0 ? ' (' + ready + ')' : ' All'}`;
+}
+
+function setStatus(msg, type) {
+    const el = document.getElementById('appStatus');
+    el.innerText = msg;
+    el.className = 'app-status ' + (type || '');
+}
+
+function showStats() {
+    const list = document.getElementById('statsList');
+    const total = document.getElementById('statsTotal');
+    const max = Math.max(...STAGES.map(s => photoCounts[s]), 1);
+    const totalPhotos = STAGES.reduce((sum, s) => sum + photoCounts[s], 0);
+    const minCount = Math.min(...STAGES.map(s => photoCounts[s]));
+    const needed = Math.max(0, 200 - minCount);
+
+    list.innerHTML = STAGES.map(s => `
+        <div class="stats-row">
+            <div class="stats-stage">C${s}</div>
+            <div class="stats-bar-wrap">
+                <div class="stats-bar" style="width:${Math.round((photoCounts[s]/max)*100)}%"></div>
+            </div>
+            <div class="stats-count">${photoCounts[s]} photos</div>
+        </div>
+    `).join('');
+
+    total.innerText = `Total: ${totalPhotos} photos · ${needed > 0 ? `Need ${needed} more per stage for training` : '✓ Ready to train!'}`;
+    document.getElementById('stats-panel').classList.remove('hidden');
+}
+
+function hideStats() {
+    document.getElementById('stats-panel').classList.add('hidden');
+}
 </script>
 </body>
 </html>
