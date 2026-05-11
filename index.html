@@ -1,775 +1,751 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Banana Brain</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
-        :root {
-            --bg: #000; --card: #111; --card2: #1a1a1a;
-            --border: #222; --border2: #2a2a2a;
-            --accent: #f9d71c; --lime: #a6e22e;
-            --red: #ff4d4d; --dim: #555; --text: #fff;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        html, body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; height: 100%; overflow: hidden; }
-        body { display: flex; flex-direction: column; height: 100dvh; }
-
-        /* ── MAIN APP ── */
-        #app { display: flex; flex-direction: column; height: 100dvh; }
-
-        /* ── HEADER ── */
-        .header { background: var(--card); padding: 10px 14px 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        .app-title { font-size: 0.72rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
-        .app-status { font-size: 0.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
-        .app-status.ready { color: var(--lime); }
-        .app-status.busy { color: var(--accent); animation: pulse 1.2s infinite; }
-        .app-status.err { color: var(--red); }
-        .stage-pips { display: flex; gap: 3px; }
-        .pip { flex: 1; height: 3px; border-radius: 3px; background: var(--border2); transition: background 0.3s; }
-        .pip.done { background: var(--accent); }
-        .pip.active { background: #fff; }
-
-        /* ── CAMERA ── */
-        #cam-wrap { position: relative; width: 100%; height: 30vh; background: #000; flex-shrink: 0; overflow: hidden; }
-        #webcam { width: 100%; height: 100%; object-fit: cover; display: block; }
-        #crosshair {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80%; height: 75%;
-            border: 2px solid rgba(249,215,28,0.65);
-            border-radius: 8px; pointer-events: none;
-        }
-        #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity 0.08s; }
-        #stage-overlay {
-            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.75); border: 1px solid var(--accent);
-            padding: 4px 14px; border-radius: 20px;
-            font-size: 0.6rem; font-weight: 900; color: var(--accent);
-            text-transform: uppercase; letter-spacing: 2px; white-space: nowrap; display: none;
-        }
-        #cam-init {
-            position: absolute; inset: 0; background: #000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer;
-        }
-        #cam-init.hidden { display: none; }
-        #cam-init i { font-size: 2rem; color: var(--accent); }
-        #cam-init-title { font-size: 0.75rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; }
-        #cam-init-sub { font-size: 0.52rem; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
-        #cam-init-prog { font-size: 0.52rem; color: var(--lime); text-transform: uppercase; letter-spacing: 1px; animation: pulse 1.2s infinite; display: none; }
-        #capture-btn {
-            position: absolute; bottom: 10px; right: 14px;
-            width: 52px; height: 52px; border-radius: 50%;
-            border: 3px solid rgba(255,255,255,0.9);
-            background: transparent; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; transition: transform 0.1s;
-        }
-        #capture-btn:active { transform: scale(0.9); }
-        #capture-btn.disabled { opacity: 0.25; pointer-events: none; }
-        .capture-inner { width: 40px; height: 40px; border-radius: 50%; background: #fff; }
-
-        /* ── BOTTOM PANEL ── */
-        #bottom-panel { flex: 1; display: flex; flex-direction: column; background: var(--card); overflow: hidden; min-height: 0; }
-
-        /* ── STAGE SELECTOR (prominent) ── */
-        #stage-section { padding: 8px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-        #stage-label {
-            font-size: 0.5rem; font-weight: 700; color: var(--dim);
-            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        #stage-label .selected-indicator {
-            font-size: 0.55rem; font-weight: 900; color: var(--accent);
-            background: rgba(249,215,28,0.12); border: 1px solid rgba(249,215,28,0.3);
-            padding: 2px 10px; border-radius: 10px;
-        }
-        #stage-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
-        .stage-btn {
-            background: var(--card2); border: 1px solid var(--border2);
-            border-radius: 8px; color: var(--text);
-            font-size: 0.72rem; font-weight: 900;
-            padding: 9px 0; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 1px; transition: all 0.12s;
-        }
-        .stage-btn:active { transform: scale(0.93); }
-        .stage-btn.selected {
-            background: var(--accent); color: #000;
-            border-color: var(--accent);
-            box-shadow: 0 0 12px rgba(249,215,28,0.4);
-        }
-        .stage-btn.has-data { border-color: rgba(249,215,28,0.35); }
-        .s-count { font-size: 0.42rem; font-weight: 700; }
-        .stage-btn.selected .s-count { color: #000; }
-        .stage-btn:not(.selected) .s-count { color: var(--accent); }
-
-        /* ── THUMBNAILS ── */
-        #thumb-section { padding: 7px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-        #thumb-label {
-            font-size: 0.46rem; font-weight: 700; color: var(--dim);
-            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;
-            display: flex; justify-content: space-between;
-        }
-        #thumb-label span { color: var(--accent); }
-        #thumb-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
-        #thumb-row::-webkit-scrollbar { display: none; }
-        .thumb {
-            width: 58px; height: 46px; border-radius: 8px;
-            background: var(--card2); border: 1.5px solid var(--border2);
-            flex-shrink: 0; position: relative; overflow: hidden;
-            cursor: pointer; transition: border-color 0.15s;
-        }
-        .thumb:active { transform: scale(0.95); }
-        .thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .thumb-badge {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            background: rgba(0,0,0,0.8); padding: 2px 0;
-            font-size: 7px; font-weight: 900;
-            color: var(--accent); text-align: center;
-        }
-        .thumb-badge.unassigned { color: var(--red); }
-        .thumb-del {
-            position: absolute; top: 2px; right: 2px;
-            width: 15px; height: 15px; border-radius: 50%;
-            background: rgba(255,77,77,0.9); color: #fff;
-            font-size: 8px; font-weight: 900;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; z-index: 10;
-        }
-        .thumb-empty {
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px; color: rgba(255,255,255,0.1);
-        }
-
-        /* ── LIBRARY + ACTION BAR ── */
-        #action-bar {
-            display: flex; gap: 6px;
-            padding: 8px 10px max(env(safe-area-inset-bottom), 10px);
-            flex-shrink: 0;
-        }
-        .act-btn {
-            flex: 1; padding: 12px; border-radius: 10px; border: none;
-            font-weight: 900; font-size: 0.65rem;
-            text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 5px;
-            transition: opacity 0.15s;
-        }
-        .act-btn:active { opacity: 0.7; }
-        #library-btn { background: var(--card2); color: var(--text); border: 1px solid var(--border2); }
-        #upload-btn { background: var(--accent); color: #000; }
-        #upload-btn.disabled { opacity: 0.3; pointer-events: none; }
-        #stats-btn { flex: 0 0 auto; padding: 12px 14px; background: var(--card2); color: var(--text); border: 1px solid var(--border2); border-radius: 10px; cursor: pointer; font-size: 1rem; }
-        #file-input { display: none; }
-
-        /* ── FULL SCREEN THUMBNAIL EDITOR ── */
-        #photo-editor {
-            position: fixed; inset: 0; background: #000;
-            z-index: 300; display: flex; flex-direction: column;
-        }
-        #photo-editor.hidden { display: none; }
-        #editor-photo-wrap {
-            height: 50vh; position: relative; background: #000; flex-shrink: 0;
-        }
-        #editor-photo {
-            width: 100%; height: 100%; object-fit: contain; display: block;
-        }
-        #editor-back {
-            position: absolute; top: 14px; left: 14px;
-            background: rgba(0,0,0,0.65); border: 1px solid rgba(255,255,255,0.2);
-            color: #fff; font-size: 0.6rem; font-weight: 900;
-            text-transform: uppercase; letter-spacing: 1px;
-            padding: 6px 14px; border-radius: 20px; cursor: pointer; z-index: 5;
-        }
-        #editor-current-badge {
-            position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.75); border: 1px solid var(--accent);
-            padding: 5px 16px; border-radius: 20px;
-            font-size: 0.65rem; font-weight: 900; color: var(--accent);
-            text-transform: uppercase; letter-spacing: 2px; white-space: nowrap;
-        }
-        #editor-bottom {
-            flex: 1; background: var(--card);
-            display: flex; flex-direction: column;
-            padding: 12px 10px max(env(safe-area-inset-bottom), 12px);
-            overflow: hidden;
-        }
-        #editor-label {
-            font-size: 0.5rem; font-weight: 700; color: var(--dim);
-            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
-        }
-        #editor-stage-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; flex: 1; }
-        .editor-stage-btn {
-            background: var(--card2); border: 1px solid var(--border2);
-            border-radius: 8px; color: var(--text);
-            font-size: 0.72rem; font-weight: 900;
-            cursor: pointer; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; gap: 2px;
-            transition: all 0.12s;
-        }
-        .editor-stage-btn:active { transform: scale(0.93); }
-        .editor-stage-btn.selected {
-            background: var(--accent); color: #000;
-            border-color: var(--accent);
-            box-shadow: 0 0 12px rgba(249,215,28,0.4);
-        }
-        .editor-stage-btn.has-data { border-color: rgba(249,215,28,0.3); }
-        .e-count { font-size: 0.42rem; font-weight: 700; }
-        .editor-stage-btn.selected .e-count { color: #000; }
-        .editor-stage-btn:not(.selected) .e-count { color: var(--accent); }
-
-        /* ── DRIVE CONNECT ── */
-        #drive-screen {
-            position: fixed; inset: 0; background: #000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 16px; z-index: 100; padding: 30px;
-        }
-        #drive-screen.hidden { display: none; }
-        #drive-screen i { font-size: 3rem; color: #4285f4; }
-        #drive-screen h2 { font-size: 0.9rem; font-weight: 900; color: #fff; letter-spacing: 2px; text-align: center; }
-        #drive-screen p { font-size: 0.6rem; color: var(--dim); text-align: center; line-height: 1.6; }
-        #connect-drive-btn {
-            background: #4285f4; color: #fff; border: none;
-            padding: 16px 32px; border-radius: 100px;
-            font-weight: 900; font-size: 0.8rem;
-            text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
-            display: flex; align-items: center; gap: 8px;
-        }
-
-        /* ── STATS ── */
-        #stats-panel {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.96);
-            z-index: 200; display: flex; flex-direction: column; padding: 20px 16px;
-        }
-        #stats-panel.hidden { display: none; }
-        .stats-title { font-size: 0.7rem; font-weight: 900; color: var(--accent); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px; }
-        .stats-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; }
-        .stats-row { display: flex; align-items: center; gap: 10px; background: var(--card2); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 12px; }
-        .stats-stage { font-size: 0.8rem; font-weight: 900; min-width: 34px; }
-        .stats-bar-wrap { flex: 1; height: 5px; background: var(--border2); border-radius: 5px; overflow: hidden; }
-        .stats-bar { height: 100%; background: var(--accent); border-radius: 5px; }
-        .stats-count { font-size: 0.6rem; font-weight: 900; color: var(--accent); min-width: 52px; text-align: right; }
-        .stats-total { font-size: 0.55rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; text-align: center; }
-        #close-stats { margin-top: 12px; padding: 14px; border-radius: 10px; background: var(--card2); border: 1px solid var(--border2); color: var(--text); font-weight: 900; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; }
-
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Banana Brain</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<style>
+:root {
+--bg: #000; --card: #111; --card2: #1a1a1a;
+--border: #222; --border2: #2a2a2a;
+--accent: #f9d71c; --lime: #a6e22e;
+--red: #ff4d4d; --dim: #555; --text: #fff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; height: 100%; overflow: hidden; }
+body { display: flex; flex-direction: column; height: 100dvh; }
+/* ── MAIN APP ── */
+#app { display: flex; flex-direction: column; height: 100dvh; }
+/* ── HEADER ── */
+.header { background: var(--card); padding: 10px 14px 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.app-title { font-size: 0.72rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
+.app-status { font-size: 0.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+.app-status.ready { color: var(--lime); }
+.app-status.busy { color: var(--accent); animation: pulse 1.2s infinite; }
+.app-status.err { color: var(--red); }
+.stage-pips { display: flex; gap: 3px; }
+.pip { flex: 1; height: 3px; border-radius: 3px; background: var(--border2); transition: background 0.3s; }
+.pip.done { background: var(--accent); }
+.pip.active { background: #fff; }
+/* ── CAMERA ── */
+#cam-wrap { position: relative; width: 100%; height: 30vh; background: #000; flex-shrink: 0; overflow: hidden; }
+#webcam { width: 100%; height: 100%; object-fit: cover; display: block; }
+#crosshair {
+position: absolute; top: 50%; left: 50%;
+transform: translate(-50%, -50%);
+width: 88%; height: 58%;
+border: 2px solid rgba(249,215,28,0.65);
+border-radius: 8px; pointer-events: none;
+}
+#flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity 0.08s; }
+#stage-overlay {
+position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+background: rgba(0,0,0,0.75); border: 1px solid var(--accent);
+padding: 4px 14px; border-radius: 20px;
+font-size: 0.6rem; font-weight: 900; color: var(--accent);
+text-transform: uppercase; letter-spacing: 2px; white-space: nowrap; display: none;
+}
+#cam-init {
+position: absolute; inset: 0; background: #000;
+display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer;
+}
+#cam-init.hidden { display: none; }
+#cam-init i { font-size: 2rem; color: var(--accent); }
+#cam-init-title { font-size: 0.75rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; }
+#cam-init-sub { font-size: 0.52rem; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
+#cam-init-prog { font-size: 0.52rem; color: var(--lime); text-transform: uppercase; letter-spacing: 1px; animation: pulse 1.2s infinite; display: none; }
+#capture-btn {
+position: absolute; bottom: 10px; right: 14px;
+width: 52px; height: 52px; border-radius: 50%;
+border: 3px solid rgba(255,255,255,0.9);
+background: transparent; cursor: pointer;
+display: flex; align-items: center; justify-content: center; transition: transform 0.1s;
+}
+#capture-btn:active { transform: scale(0.9); }
+#capture-btn.disabled { opacity: 0.25; pointer-events: none; }
+.capture-inner { width: 40px; height: 40px; border-radius: 50%; background: #fff; }
+/* ── BOTTOM PANEL ── */
+#bottom-panel { flex: 1; display: flex; flex-direction: column; background: var(--card); overflow: hidden; min-height: 0; }
+/* ── STAGE SELECTOR (prominent) ── */
+#stage-section { padding: 8px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+#stage-label {
+font-size: 0.5rem; font-weight: 700; color: var(--dim);
+text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+display: flex; justify-content: space-between; align-items: center;
+}
+#stage-label .selected-indicator {
+font-size: 0.55rem; font-weight: 900; color: var(--accent);
+background: rgba(249,215,28,0.12); border: 1px solid rgba(249,215,28,0.3);
+padding: 2px 10px; border-radius: 10px;
+}
+#stage-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+.stage-btn {
+background: var(--card2); border: 1px solid var(--border2);
+border-radius: 8px; color: var(--text);
+font-size: 0.72rem; font-weight: 900;
+padding: 9px 0; cursor: pointer;
+display: flex; flex-direction: column; align-items: center; justify-content: center;
+gap: 1px; transition: all 0.12s;
+}
+.stage-btn:active { transform: scale(0.93); }
+.stage-btn.selected {
+background: var(--accent); color: #000;
+border-color: var(--accent);
+box-shadow: 0 0 12px rgba(249,215,28,0.4);
+}
+.stage-btn.has-data { border-color: rgba(249,215,28,0.35); }
+.s-count { font-size: 0.42rem; font-weight: 700; }
+.stage-btn.selected .s-count { color: #000; }
+.stage-btn:not(.selected) .s-count { color: var(--accent); }
+/* ── THUMBNAILS ── */
+#thumb-section { padding: 7px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+#thumb-label {
+font-size: 0.46rem; font-weight: 700; color: var(--dim);
+text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;
+display: flex; justify-content: space-between;
+}
+#thumb-label span { color: var(--accent); }
+#thumb-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+#thumb-row::-webkit-scrollbar { display: none; }
+.thumb {
+width: 58px; height: 46px; border-radius: 8px;
+background: var(--card2); border: 1.5px solid var(--border2);
+flex-shrink: 0; position: relative; overflow: hidden;
+cursor: pointer; transition: border-color 0.15s;
+}
+.thumb:active { transform: scale(0.95); }
+.thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb-badge {
+position: absolute; bottom: 0; left: 0; right: 0;
+background: rgba(0,0,0,0.8); padding: 2px 0;
+font-size: 7px; font-weight: 900;
+color: var(--accent); text-align: center;
+}
+.thumb-badge.unassigned { color: var(--red); }
+.thumb-del {
+position: absolute; top: 2px; right: 2px;
+width: 15px; height: 15px; border-radius: 50%;
+background: rgba(255,77,77,0.9); color: #fff;
+font-size: 8px; font-weight: 900;
+display: flex; align-items: center; justify-content: center;
+cursor: pointer; z-index: 10;
+}
+.thumb-empty {
+display: flex; align-items: center; justify-content: center;
+font-size: 18px; color: rgba(255,255,255,0.1);
+}
+/* ── LIBRARY + ACTION BAR ── */
+#action-bar {
+display: flex; gap: 6px;
+padding: 8px 10px max(env(safe-area-inset-bottom), 10px);
+flex-shrink: 0;
+}
+.act-btn {
+flex: 1; padding: 12px; border-radius: 10px; border: none;
+font-weight: 900; font-size: 0.65rem;
+text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+display: flex; align-items: center; justify-content: center; gap: 5px;
+transition: opacity 0.15s;
+}
+.act-btn:active { opacity: 0.7; }
+#library-btn { background: var(--card2); color: var(--text); border: 1px solid var(--border2); }
+#upload-btn { background: var(--accent); color: #000; }
+#upload-btn.disabled { opacity: 0.3; pointer-events: none; }
+#stats-btn { flex: 0 0 auto; padding: 12px 14px; background: var(--card2); color: var(--text); border: 1px solid var(--border2); border-radius: 10px; cursor: pointer; font-size: 1rem; }
+#file-input { display: none; }
+/* ── FULL SCREEN THUMBNAIL EDITOR ── */
+#photo-editor {
+position: fixed; inset: 0; background: #000;
+z-index: 300; display: flex; flex-direction: column;
+}
+#photo-editor.hidden { display: none; }
+#editor-photo-wrap {
+height: 50vh; position: relative; background: #000; flex-shrink: 0;
+}
+#editor-photo {
+width: 100%; height: 100%; object-fit: contain; display: block;
+}
+#editor-back {
+position: absolute; top: 14px; left: 14px;
+background: rgba(0,0,0,0.65); border: 1px solid rgba(255,255,255,0.2);
+color: #fff; font-size: 0.6rem; font-weight: 900;
+text-transform: uppercase; letter-spacing: 1px;
+padding: 6px 14px; border-radius: 20px; cursor: pointer; z-index: 5;
+}
+#editor-current-badge {
+position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+background: rgba(0,0,0,0.75); border: 1px solid var(--accent);
+padding: 5px 16px; border-radius: 20px;
+font-size: 0.65rem; font-weight: 900; color: var(--accent);
+text-transform: uppercase; letter-spacing: 2px; white-space: nowrap;
+}
+#editor-bottom {
+flex: 1; background: var(--card);
+display: flex; flex-direction: column;
+padding: 12px 10px max(env(safe-area-inset-bottom), 12px);
+overflow: hidden;
+}
+#editor-label {
+font-size: 0.5rem; font-weight: 700; color: var(--dim);
+text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+}
+#editor-stage-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; flex: 1; }
+.editor-stage-btn {
+background: var(--card2); border: 1px solid var(--border2);
+border-radius: 8px; color: var(--text);
+font-size: 0.72rem; font-weight: 900;
+cursor: pointer; display: flex; flex-direction: column;
+align-items: center; justify-content: center; gap: 2px;
+transition: all 0.12s;
+}
+.editor-stage-btn:active { transform: scale(0.93); }
+.editor-stage-btn.selected {
+background: var(--accent); color: #000;
+border-color: var(--accent);
+box-shadow: 0 0 12px rgba(249,215,28,0.4);
+}
+.editor-stage-btn.has-data { border-color: rgba(249,215,28,0.3); }
+.e-count { font-size: 0.42rem; font-weight: 700; }
+.editor-stage-btn.selected .e-count { color: #000; }
+.editor-stage-btn:not(.selected) .e-count { color: var(--accent); }
+/* ── DRIVE CONNECT ── */
+#drive-screen {
+position: fixed; inset: 0; background: #000;
+display: flex; flex-direction: column; align-items: center; justify-content: center;
+gap: 16px; z-index: 100; padding: 30px;
+}
+#drive-screen.hidden { display: none; }
+#drive-screen i { font-size: 3rem; color: #4285f4; }
+#drive-screen h2 { font-size: 0.9rem; font-weight: 900; color: #fff; letter-spacing: 2px; text-align: center; }
+#drive-screen p { font-size: 0.6rem; color: var(--dim); text-align: center; line-height: 1.6; }
+#connect-drive-btn {
+background: #4285f4; color: #fff; border: none;
+padding: 16px 32px; border-radius: 100px;
+font-weight: 900; font-size: 0.8rem;
+text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+display: flex; align-items: center; gap: 8px;
+}
+/* ── STATS ── */
+#stats-panel {
+position: fixed; inset: 0; background: rgba(0,0,0,0.96);
+z-index: 200; display: flex; flex-direction: column; padding: 20px 16px;
+}
+#stats-panel.hidden { display: none; }
+.stats-title { font-size: 0.7rem; font-weight: 900; color: var(--accent); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px; }
+.stats-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; }
+.stats-row { display: flex; align-items: center; gap: 10px; background: var(--card2); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 12px; }
+.stats-stage { font-size: 0.8rem; font-weight: 900; min-width: 34px; }
+.stats-bar-wrap { flex: 1; height: 5px; background: var(--border2); border-radius: 5px; overflow: hidden; }
+.stats-bar { height: 100%; background: var(--accent); border-radius: 5px; }
+.stats-count { font-size: 0.6rem; font-weight: 900; color: var(--accent); min-width: 52px; text-align: right; }
+.stats-total { font-size: 0.55rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; text-align: center; }
+#close-stats { margin-top: 12px; padding: 14px; border-radius: 10px; background: var(--card2); border: 1px solid var(--border2); color: var(--text); font-weight: 900; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+</style>
 </head>
 <body>
-
 <!-- Drive Connect -->
 <div id="drive-screen">
-    <i class="bi bi-cloud-fill"></i>
-    <h2>Connect Google Drive</h2>
-    <p>Photos save directly to Google Drive — nothing stored on your phone.</p>
-    <button id="connect-drive-btn" onclick="connectDrive()">
-        <i class="bi bi-google"></i> Connect Drive
-    </button>
+  <i class="bi bi-cloud-fill"></i>
+  <h2>Connect Google Drive</h2>
+  <p>Photos save directly to Google Drive — nothing stored on your phone.</p>
+  <button id="connect-drive-btn" onclick="connectDrive()">
+    <i class="bi bi-google"></i> Connect Drive
+  </button>
 </div>
 
 <!-- Photo Editor (full screen thumbnail) -->
 <div id="photo-editor" class="hidden">
-    <div id="editor-photo-wrap">
-        <img id="editor-photo" src="" alt="">
-        <div id="editor-back" onclick="closeEditor()">← Back</div>
-        <div id="editor-current-badge">No color assigned</div>
-    </div>
-    <div id="editor-bottom">
-        <div id="editor-label">Tap to assign color — changes instantly</div>
-        <div id="editor-stage-grid"></div>
-    </div>
+  <div id="editor-photo-wrap">
+    <img id="editor-photo" src="" alt="">
+    <div id="editor-back" onclick="closeEditor()">← Back</div>
+    <div id="editor-current-badge">No color assigned</div>
+  </div>
+  <div id="editor-bottom">
+    <div id="editor-label">Tap to assign color — changes instantly</div>
+    <div id="editor-stage-grid"></div>
+  </div>
 </div>
 
 <!-- Main App -->
 <div id="app">
-    <div class="header">
-        <div class="header-row">
-            <div class="app-title">🍌 Banana Brain</div>
-            <div class="app-status" id="appStatus">Starting...</div>
-        </div>
-        <div class="stage-pips" id="stagePips"></div>
+  <div class="header">
+    <div class="header-row">
+      <div class="app-title">🍌 Banana Brain</div>
+      <div class="app-status" id="appStatus">Starting...</div>
     </div>
-
-    <div id="cam-wrap">
-        <video id="webcam" autoplay playsinline muted></video>
-        <div id="crosshair"></div>
-        <div id="flash"></div>
-        <div id="stage-overlay"></div>
-        <div id="cam-init" onclick="startCamera()">
-            <i class="bi bi-camera-fill"></i>
-            <div id="cam-init-title">Tap to Start Camera</div>
-            <div id="cam-init-sub">Select a color stage first</div>
-            <div id="cam-init-prog"></div>
-        </div>
-        <button id="capture-btn" class="disabled" onclick="capturePhoto()">
-            <div class="capture-inner"></div>
-        </button>
+    <div class="stage-pips" id="stagePips"></div>
+  </div>
+  <div id="cam-wrap">
+    <video id="webcam" autoplay playsinline muted></video>
+    <div id="crosshair"></div>
+    <div id="flash"></div>
+    <div id="stage-overlay"></div>
+    <div id="cam-init" onclick="startCamera()">
+      <i class="bi bi-camera-fill"></i>
+      <div id="cam-init-title">Tap to Start Camera</div>
+      <div id="cam-init-sub">Select a color stage first</div>
+      <div id="cam-init-prog"></div>
     </div>
-
-    <div id="bottom-panel">
-
-        <!-- Stage selector — prominent -->
-        <div id="stage-section">
-            <div id="stage-label">
-                <span>Select color stage</span>
-                <span class="selected-indicator" id="selectedIndicator">None selected</span>
-            </div>
-            <div id="stage-grid"></div>
-        </div>
-
-        <!-- Thumbnails -->
-        <div id="thumb-section">
-            <div id="thumb-label">
-                Captured photos
-                <span id="thumbCount"></span>
-            </div>
-            <div id="thumb-row"></div>
-        </div>
-
-        <!-- Actions -->
-        <div id="action-bar">
-            <button class="act-btn" id="library-btn" onclick="openLibrary()">
-                <i class="bi bi-images"></i> From Library
-            </button>
-            <button class="act-btn disabled" id="upload-btn" onclick="uploadAll()">
-                <i class="bi bi-cloud-upload-fill"></i> Upload All
-            </button>
-            <button id="stats-btn" onclick="showStats()">
-                <i class="bi bi-bar-chart-fill"></i>
-            </button>
-        </div>
-
+    <button id="capture-btn" class="disabled" onclick="capturePhoto()">
+      <div class="capture-inner"></div>
+    </button>
+  </div>
+  <div id="bottom-panel">
+    <!-- Stage selector — prominent -->
+    <div id="stage-section">
+      <div id="stage-label">
+        <span>Select color stage</span>
+        <span class="selected-indicator" id="selectedIndicator">None selected</span>
+      </div>
+      <div id="stage-grid"></div>
     </div>
+    <!-- Thumbnails -->
+    <div id="thumb-section">
+      <div id="thumb-label">
+        Captured photos
+        <span id="thumbCount"></span>
+      </div>
+      <div id="thumb-row"></div>
+    </div>
+    <!-- Actions -->
+    <div id="action-bar">
+      <button class="act-btn" id="library-btn" onclick="openLibrary()">
+        <i class="bi bi-images"></i> From Library
+      </button>
+      <button class="act-btn disabled" id="upload-btn" onclick="uploadAll()">
+        <i class="bi bi-cloud-upload-fill"></i> Upload All
+      </button>
+      <button id="stats-btn" onclick="showStats()">
+        <i class="bi bi-bar-chart-fill"></i>
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- Stats -->
 <div id="stats-panel" class="hidden">
-    <div class="stats-title">📊 Training Stats</div>
-    <div class="stats-list" id="statsList"></div>
-    <div class="stats-total" id="statsTotal"></div>
-    <button id="close-stats" onclick="hideStats()">← Back</button>
+  <div class="stats-title">📊 Training Stats</div>
+  <div class="stats-list" id="statsList"></div>
+  <div class="stats-total" id="statsTotal"></div>
+  <button id="close-stats" onclick="hideStats()">← Back</button>
 </div>
 
 <!-- Hidden file input for library -->
 <input type="file" id="file-input" accept="image/*" multiple onchange="handleLibraryFiles(event)">
 
 <script>
-const CLIENT_ID    = '491662852792-0aplippkbgi2upk9qour1hvomcfb11ta.apps.googleusercontent.com';
+const CLIENT_ID = '491662852792-0aplippkbgi2upk9qour1hvomcfb11ta.apps.googleusercontent.com';
 const REDIRECT_URI = window.location.origin + window.location.pathname;
-const SCOPES       = 'https://www.googleapis.com/auth/drive.file';
-const FOLDER_NAME  = 'banana-brain';
-const STAGES       = ['1','1.5','2','2.5','3','3.5','4','4.5','5','5.5','6'];
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const FOLDER_NAME = 'banana-brain';
+const STAGES = ['1','1.5','2','2.5','3','3.5','4','4.5','5','5.5','6'];
 
-let accessToken    = null;
-let rootFolderId   = null;
+let accessToken = null;
+let rootFolderId = null;
 let stageFolderIds = {};
-let photoCounts    = {};
-let selectedStage  = null;
-let cameraReady    = false;
-let cameraStream   = null;
-let captures       = [];
-let editingId      = null;
+let photoCounts = {};
+let selectedStage = null;
+let cameraReady = false;
+let cameraStream = null;
+let captures = [];
+let editingId = null;
 
 STAGES.forEach(s => photoCounts[s] = 0);
 
 // ── BOOT ──────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-    const hash = window.location.hash;
-    if (hash && hash.includes('access_token')) {
-        const hp = new URLSearchParams(hash.substring(1));
-        const token = hp.get('access_token');
-        if (token) {
-            accessToken = token;
-            window.history.replaceState({}, '', REDIRECT_URI);
-            launchApp(true);
-            return;
-        }
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token')) {
+    const hp = new URLSearchParams(hash.substring(1));
+    const token = hp.get('access_token');
+    if (token) {
+      accessToken = token;
+      window.history.replaceState({}, '', REDIRECT_URI);
+      launchApp(true);
+      return;
     }
-    document.getElementById('drive-screen').classList.remove('hidden');
+  }
+  document.getElementById('drive-screen').classList.remove('hidden');
 });
 
 function connectDrive() {
-    const url = 'https://accounts.google.com/o/oauth2/v2/auth'
-        + '?client_id=' + encodeURIComponent(CLIENT_ID)
-        + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI)
-        + '&response_type=token'
-        + '&scope=' + encodeURIComponent(SCOPES);
-    window.location.href = url;
+  const url = 'https://accounts.google.com/o/oauth2/v2/auth'
+    + '?client_id=' + encodeURIComponent(CLIENT_ID)
+    + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI)
+    + '&response_type=token'
+    + '&scope=' + encodeURIComponent(SCOPES);
+  window.location.href = url;
 }
 
 async function launchApp(hasDrive) {
-    document.getElementById('drive-screen').classList.add('hidden');
-    document.getElementById('app').style.display = 'flex';
-    buildStageGrid();
-    buildEditorGrid();
-    buildPips();
-    renderThumbs();
-    if (hasDrive) {
-        setStatus('Setting up Drive folders...', 'busy');
-        try {
-            rootFolderId = await getOrCreateFolder(FOLDER_NAME, 'root');
-            await loadCounts();
-            setStatus('Drive ready — select a color stage', 'ready');
-        } catch (e) {
-            setStatus('Drive error: ' + e.message, 'err');
-        }
+  document.getElementById('drive-screen').classList.add('hidden');
+  document.getElementById('app').style.display = 'flex';
+  buildStageGrid();
+  buildEditorGrid();
+  buildPips();
+  renderThumbs();
+  if (hasDrive) {
+    setStatus('Setting up Drive folders...', 'busy');
+    try {
+      rootFolderId = await getOrCreateFolder(FOLDER_NAME, 'root');
+      await loadCounts();
+      setStatus('Drive ready — select a color stage', 'ready');
+    } catch (e) {
+      setStatus('Drive error: ' + e.message, 'err');
     }
+  }
 }
 
 // ── CAMERA ────────────────────────────────────────────────────
 async function startCamera() {
-    if (!selectedStage) {
-        setStatus('Select a color stage first!', 'err');
-        return;
+  if (!selectedStage) {
+    setStatus('Select a color stage first!', 'err');
+    return;
+  }
+  const init = document.getElementById('cam-init');
+  const prog = document.getElementById('cam-init-prog');
+  const sub = document.getElementById('cam-init-sub');
+  sub.style.display = 'none';
+  prog.style.display = 'block';
+  prog.innerText = 'Starting camera...';
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } },
+      audio: false
+    });
+    // Force minimum zoom (widest angle) — locked, no user control
+    const track = cameraStream.getVideoTracks()[0];
+    const caps = track.getCapabilities();
+    if (caps.zoom) {
+      await track.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] });
     }
-    const init = document.getElementById('cam-init');
-    const prog = document.getElementById('cam-init-prog');
-    const sub  = document.getElementById('cam-init-sub');
-    sub.style.display = 'none';
-    prog.style.display = 'block';
-    prog.innerText = 'Starting camera...';
-
-    try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 }, aspectRatio: { ideal: 16/9 } },
-            audio: false
-        });
-        const vid = document.getElementById('webcam');
-        vid.srcObject = cameraStream;
-        await new Promise(r => { vid.onloadedmetadata = r; });
-        vid.play();
-        init.classList.add('hidden');
-        cameraReady = true;
-        document.getElementById('capture-btn').classList.remove('disabled');
-        setStatus(`Color ${selectedStage} selected — capture away!`, 'ready');
-    } catch (err) {
-        prog.style.color = 'var(--red)';
-        prog.innerText = err.name === 'NotAllowedError'
-            ? 'Camera blocked — AA menu > Website Settings > Camera > Allow'
-            : 'Camera error: ' + err.message;
-    }
+    const vid = document.getElementById('webcam');
+    vid.srcObject = cameraStream;
+    await new Promise(r => { vid.onloadedmetadata = r; });
+    vid.play();
+    init.classList.add('hidden');
+    cameraReady = true;
+    document.getElementById('capture-btn').classList.remove('disabled');
+    setStatus(`Color ${selectedStage} selected — capture away!`, 'ready');
+  } catch (err) {
+    prog.style.color = 'var(--red)';
+    prog.innerText = err.name === 'NotAllowedError'
+      ? 'Camera blocked — AA menu > Website Settings > Camera > Allow'
+      : 'Camera error: ' + err.message;
+  }
 }
 
 function restartCamera() {
-    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
-    cameraReady = false;
-    const vid = document.getElementById('webcam');
-    vid.srcObject = null;
-    document.getElementById('capture-btn').classList.add('disabled');
-    const init = document.getElementById('cam-init');
-    init.classList.remove('hidden');
-    document.getElementById('cam-init-sub').style.display = 'block';
-    document.getElementById('cam-init-prog').style.display = 'none';
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  cameraReady = false;
+  const vid = document.getElementById('webcam');
+  vid.srcObject = null;
+  document.getElementById('capture-btn').classList.add('disabled');
+  const init = document.getElementById('cam-init');
+  init.classList.remove('hidden');
+  document.getElementById('cam-init-sub').style.display = 'block';
+  document.getElementById('cam-init-prog').style.display = 'none';
 }
 
 // ── CAPTURE ───────────────────────────────────────────────────
 function capturePhoto() {
-    if (!cameraReady) return;
-    const flash = document.getElementById('flash');
-    flash.style.opacity = '1';
-    setTimeout(() => flash.style.opacity = '0', 120);
-
-    const vid = document.getElementById('webcam');
-    const canvas = document.createElement('canvas');
-    canvas.width = vid.videoWidth;
-    canvas.height = vid.videoHeight;
-    canvas.getContext('2d').drawImage(vid, 0, 0);
-
-    canvas.toBlob(blob => {
-        const id = 'cap_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
-        captures.push({ id, dataUrl: canvas.toDataURL('image/jpeg', 0.88), blob, stage: selectedStage });
-        renderThumbs();
-        updateUploadBtn();
-        setStatus(`Photo captured for Color ${selectedStage} (${captures.filter(c=>c.stage===selectedStage).length} total)`, 'ready');
-    }, 'image/jpeg', 0.88);
+  if (!cameraReady) return;
+  const flash = document.getElementById('flash');
+  flash.style.opacity = '1';
+  setTimeout(() => flash.style.opacity = '0', 120);
+  const vid = document.getElementById('webcam');
+  const canvas = document.createElement('canvas');
+  canvas.width = vid.videoWidth;
+  canvas.height = vid.videoHeight;
+  canvas.getContext('2d').drawImage(vid, 0, 0);
+  canvas.toBlob(blob => {
+    const id = 'cap_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+    captures.push({ id, dataUrl: canvas.toDataURL('image/jpeg', 0.88), blob, stage: selectedStage });
+    renderThumbs();
+    updateUploadBtn();
+    setStatus(`Photo captured for Color ${selectedStage} (${captures.filter(c=>c.stage===selectedStage).length} total)`, 'ready');
+  }, 'image/jpeg', 0.88);
 }
 
 // ── STAGE SELECTION ───────────────────────────────────────────
 function selectStage(stage) {
-    selectedStage = stage;
-    STAGES.forEach(s => {
-        const btn = document.getElementById('sb-' + s.replace('.','_'));
-        if (btn) btn.classList.toggle('selected', s === stage);
-        const pip = document.getElementById('pip-' + s.replace('.','_'));
-        if (pip) pip.classList.toggle('active', s === stage);
-    });
-    document.getElementById('selectedIndicator').innerText = 'Color ' + stage + ' ✓';
-    const ov = document.getElementById('stage-overlay');
-    ov.innerText = 'Color ' + stage;
-    ov.style.display = 'block';
-
-    // If camera not started yet, start it now
-    if (!cameraReady) {
-        startCamera();
-    } else {
-        document.getElementById('capture-btn').classList.remove('disabled');
-        setStatus(`Color ${stage} selected — capture away!`, 'ready');
-    }
+  selectedStage = stage;
+  STAGES.forEach(s => {
+    const btn = document.getElementById('sb-' + s.replace('.','_'));
+    if (btn) btn.classList.toggle('selected', s === stage);
+    const pip = document.getElementById('pip-' + s.replace('.','_'));
+    if (pip) pip.classList.toggle('active', s === stage);
+  });
+  document.getElementById('selectedIndicator').innerText = 'Color ' + stage + ' ✓';
+  const ov = document.getElementById('stage-overlay');
+  ov.innerText = 'Color ' + stage;
+  ov.style.display = 'block';
+  // If camera not started yet, start it now
+  if (!cameraReady) {
+    startCamera();
+  } else {
+    document.getElementById('capture-btn').classList.remove('disabled');
+    setStatus(`Color ${stage} selected — capture away!`, 'ready');
+  }
 }
 
 // ── LIBRARY UPLOAD ────────────────────────────────────────────
 function openLibrary() {
-    document.getElementById('file-input').click();
+  document.getElementById('file-input').click();
 }
 
 function handleLibraryFiles(event) {
-    const files = Array.from(event.target.files);
-    if (!files.length) return;
-    setStatus(`Loading ${files.length} photo(s) from library...`, 'busy');
-
-    let loaded = 0;
-    files.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const dataUrl = e.target.result;
-            // Convert dataUrl to blob
-            fetch(dataUrl).then(r => r.blob()).then(blob => {
-                const id = 'lib_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
-                captures.push({ id, dataUrl, blob, stage: selectedStage || null });
-                loaded++;
-                if (loaded === files.length) {
-                    renderThumbs();
-                    updateUploadBtn();
-                    setStatus(`${files.length} photo(s) loaded — assign colors and upload`, 'ready');
-                }
-            });
-        };
-        reader.readAsDataURL(file);
-    });
-
-    // Reset file input so same files can be selected again
-    event.target.value = '';
+  const files = Array.from(event.target.files);
+  if (!files.length) return;
+  setStatus(`Loading ${files.length} photo(s) from library...`, 'busy');
+  let loaded = 0;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      // Convert dataUrl to blob
+      fetch(dataUrl).then(r => r.blob()).then(blob => {
+        const id = 'lib_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+        captures.push({ id, dataUrl, blob, stage: selectedStage || null });
+        loaded++;
+        if (loaded === files.length) {
+          renderThumbs();
+          updateUploadBtn();
+          setStatus(`${files.length} photo(s) loaded — assign colors and upload`, 'ready');
+        }
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+  // Reset file input so same files can be selected again
+  event.target.value = '';
 }
 
 // ── PHOTO EDITOR ──────────────────────────────────────────────
 function openEditor(id) {
-    const cap = captures.find(c => c.id === id);
-    if (!cap) return;
-    editingId = id;
-
-    document.getElementById('editor-photo').src = cap.dataUrl;
-    updateEditorBadge(cap.stage);
-    updateEditorGrid(cap.stage);
-    document.getElementById('photo-editor').classList.remove('hidden');
+  const cap = captures.find(c => c.id === id);
+  if (!cap) return;
+  editingId = id;
+  document.getElementById('editor-photo').src = cap.dataUrl;
+  updateEditorBadge(cap.stage);
+  updateEditorGrid(cap.stage);
+  document.getElementById('photo-editor').classList.remove('hidden');
 }
 
 function closeEditor() {
-    document.getElementById('photo-editor').classList.add('hidden');
-    editingId = null;
-    renderThumbs();
-    updateUploadBtn();
+  document.getElementById('photo-editor').classList.add('hidden');
+  editingId = null;
+  renderThumbs();
+  updateUploadBtn();
 }
 
 function editorSelectStage(stage) {
-    if (!editingId) return;
-    const cap = captures.find(c => c.id === editingId);
-    if (!cap) return;
-    cap.stage = stage;
-    updateEditorBadge(stage);
-    updateEditorGrid(stage);
-    setStatus(`Color ${stage} assigned`, 'ready');
+  if (!editingId) return;
+  const cap = captures.find(c => c.id === editingId);
+  if (!cap) return;
+  cap.stage = stage;
+  updateEditorBadge(stage);
+  updateEditorGrid(stage);
+  setStatus(`Color ${stage} assigned`, 'ready');
 }
 
 function updateEditorBadge(stage) {
-    const badge = document.getElementById('editor-current-badge');
-    badge.innerText = stage ? `Color ${stage} assigned ✓` : 'No color assigned — tap below';
+  const badge = document.getElementById('editor-current-badge');
+  badge.innerText = stage ? `Color ${stage} assigned ✓` : 'No color assigned — tap below';
 }
 
 function updateEditorGrid(currentStage) {
-    STAGES.forEach(s => {
-        const btn = document.getElementById('esb-' + s.replace('.','_'));
-        if (btn) btn.classList.toggle('selected', s === currentStage);
-    });
+  STAGES.forEach(s => {
+    const btn = document.getElementById('esb-' + s.replace('.','_'));
+    if (btn) btn.classList.toggle('selected', s === currentStage);
+  });
 }
 
 // ── DELETE ────────────────────────────────────────────────────
 function deleteCapture(id) {
-    captures = captures.filter(c => c.id !== id);
-    renderThumbs();
-    updateUploadBtn();
-    if (captures.length === 0) restartCamera();
-    setStatus(`Photo removed — ${captures.length} remaining`, captures.length > 0 ? 'ready' : '');
+  captures = captures.filter(c => c.id !== id);
+  renderThumbs();
+  updateUploadBtn();
+  if (captures.length === 0) restartCamera();
+  setStatus(`Photo removed — ${captures.length} remaining`, captures.length > 0 ? 'ready' : '');
 }
 
 // ── UPLOAD ALL ────────────────────────────────────────────────
 async function uploadAll() {
-    const toUpload = captures.filter(c => c.stage);
-    if (toUpload.length === 0) { setStatus('Assign color stages to photos first!', 'err'); return; }
-    if (!accessToken) { setStatus('Not connected to Drive!', 'err'); return; }
-
-    const btn = document.getElementById('upload-btn');
-    btn.classList.add('disabled');
-    let uploaded = 0;
-
-    for (const cap of toUpload) {
-        try {
-            setStatus(`Uploading ${uploaded + 1}/${toUpload.length}...`, 'busy');
-            const folderId = await getOrCreateStageFolder(cap.stage);
-            const filename = `color_${cap.stage}_${Date.now()}_${uploaded}.jpg`;
-            await uploadFile(cap.blob, filename, folderId);
-            photoCounts[cap.stage] = (photoCounts[cap.stage] || 0) + 1;
-            updateCount(cap.stage);
-            uploaded++;
-        } catch (e) {
-            setStatus('Upload failed: ' + e.message, 'err');
-            btn.classList.remove('disabled');
-            return;
-        }
+  const toUpload = captures.filter(c => c.stage);
+  if (toUpload.length === 0) { setStatus('Assign color stages to photos first!', 'err'); return; }
+  if (!accessToken) { setStatus('Not connected to Drive!', 'err'); return; }
+  const btn = document.getElementById('upload-btn');
+  btn.classList.add('disabled');
+  let uploaded = 0;
+  for (const cap of toUpload) {
+    try {
+      setStatus(`Uploading ${uploaded + 1}/${toUpload.length}...`, 'busy');
+      const folderId = await getOrCreateStageFolder(cap.stage);
+      const filename = `color_${cap.stage}_${Date.now()}_${uploaded}.jpg`;
+      await uploadFile(cap.blob, filename, folderId);
+      photoCounts[cap.stage] = (photoCounts[cap.stage] || 0) + 1;
+      updateCount(cap.stage);
+      uploaded++;
+    } catch (e) {
+      setStatus('Upload failed: ' + e.message, 'err');
+      btn.classList.remove('disabled');
+      return;
     }
-
-    captures = captures.filter(c => !c.stage);
-    renderThumbs();
-    updateUploadBtn();
-    setStatus(`✓ ${uploaded} photos saved to Google Drive!`, 'ready');
-    btn.classList.remove('disabled');
+  }
+  captures = captures.filter(c => !c.stage);
+  renderThumbs();
+  updateUploadBtn();
+  setStatus(`✓ ${uploaded} photos saved to Google Drive!`, 'ready');
+  btn.classList.remove('disabled');
 }
 
 // ── GOOGLE DRIVE ──────────────────────────────────────────────
 async function driveRequest(url, options = {}) {
-    const res = await fetch(url, {
-        ...options,
-        headers: { 'Authorization': 'Bearer ' + accessToken, ...(options.headers || {}) }
-    });
-    if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error?.message || 'Drive error ' + res.status);
-    }
-    return res.json();
+  const res = await fetch(url, {
+    ...options,
+    headers: { 'Authorization': 'Bearer ' + accessToken, ...(options.headers || {}) }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Drive error ' + res.status);
+  }
+  return res.json();
 }
 
 async function getOrCreateFolder(name, parentId) {
-    const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`;
-    const search = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)`);
-    if (search.files && search.files.length > 0) return search.files[0].id;
-    const created = await driveRequest('https://www.googleapis.com/drive/v3/files', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] })
-    });
-    return created.id;
+  const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`;
+  const search = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)`);
+  if (search.files && search.files.length > 0) return search.files[0].id;
+  const created = await driveRequest('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] })
+  });
+  return created.id;
 }
 
 async function getOrCreateStageFolder(stage) {
-    if (stageFolderIds[stage]) return stageFolderIds[stage];
-    const id = await getOrCreateFolder('stage-' + stage, rootFolderId);
-    stageFolderIds[stage] = id;
-    return id;
+  if (stageFolderIds[stage]) return stageFolderIds[stage];
+  const id = await getOrCreateFolder('stage-' + stage, rootFolderId);
+  stageFolderIds[stage] = id;
+  return id;
 }
 
 async function uploadFile(blob, filename, folderId) {
-    const meta = JSON.stringify({ name: filename, parents: [folderId] });
-    const form = new FormData();
-    form.append('metadata', new Blob([meta], { type: 'application/json' }));
-    form.append('file', blob);
-    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-        { method: 'POST', headers: { 'Authorization': 'Bearer ' + accessToken }, body: form });
-    if (!res.ok) throw new Error('Upload failed ' + res.status);
-    return res.json();
+  const meta = JSON.stringify({ name: filename, parents: [folderId] });
+  const form = new FormData();
+  form.append('metadata', new Blob([meta], { type: 'application/json' }));
+  form.append('file', blob);
+  const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+    { method: 'POST', headers: { 'Authorization': 'Bearer ' + accessToken }, body: form });
+  if (!res.ok) throw new Error('Upload failed ' + res.status);
+  return res.json();
 }
 
 async function loadCounts() {
-    for (const stage of STAGES) {
-        try {
-            const folderId = await getOrCreateStageFolder(stage);
-            const q = `'${folderId}' in parents and trashed=false`;
-            const res = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)`);
-            photoCounts[stage] = res.files ? res.files.length : 0;
-            updateCount(stage);
-        } catch (e) {}
-    }
+  for (const stage of STAGES) {
+    try {
+      const folderId = await getOrCreateStageFolder(stage);
+      const q = `'${folderId}' in parents and trashed=false`;
+      const res = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)`);
+      photoCounts[stage] = res.files ? res.files.length : 0;
+      updateCount(stage);
+    } catch (e) {}
+  }
 }
 
 // ── UI BUILDERS ───────────────────────────────────────────────
 function buildStageGrid() {
-    document.getElementById('stage-grid').innerHTML = STAGES.map(s => `
-        <button class="stage-btn" id="sb-${s.replace('.','_')}" onclick="selectStage('${s}')">
-            ${s}<span class="s-count" id="sc-${s.replace('.','_')}">${photoCounts[s]}</span>
-        </button>
-    `).join('');
+  document.getElementById('stage-grid').innerHTML = STAGES.map(s => `
+    <button class="stage-btn" id="sb-${s.replace('.','_')}" onclick="selectStage('${s}')">
+      ${s}<span class="s-count" id="sc-${s.replace('.','_')}">${photoCounts[s]}</span>
+    </button>
+  `).join('');
 }
 
 function buildEditorGrid() {
-    document.getElementById('editor-stage-grid').innerHTML = STAGES.map(s => `
-        <button class="editor-stage-btn" id="esb-${s.replace('.','_')}" onclick="editorSelectStage('${s}')">
-            ${s}<span class="e-count" id="esc-${s.replace('.','_')}">${photoCounts[s]}</span>
-        </button>
-    `).join('');
+  document.getElementById('editor-stage-grid').innerHTML = STAGES.map(s => `
+    <button class="editor-stage-btn" id="esb-${s.replace('.','_')}" onclick="editorSelectStage('${s}')">
+      ${s}<span class="e-count" id="esc-${s.replace('.','_')}">${photoCounts[s]}</span>
+    </button>
+  `).join('');
 }
 
 function buildPips() {
-    document.getElementById('stagePips').innerHTML = STAGES.map(s =>
-        `<div class="pip" id="pip-${s.replace('.','_')}"></div>`
-    ).join('');
+  document.getElementById('stagePips').innerHTML = STAGES.map(s =>
+    `<div class="pip" id="pip-${s.replace('.','_')}"></div>`
+  ).join('');
 }
 
 function updateCount(stage) {
-    const key = stage.replace('.','_');
-    const el = document.getElementById('sc-' + key);
-    if (el) el.innerText = photoCounts[stage];
-    const el2 = document.getElementById('esc-' + key);
-    if (el2) el2.innerText = photoCounts[stage];
-    const btn = document.getElementById('sb-' + key);
-    if (btn) btn.classList.toggle('has-data', photoCounts[stage] > 0);
-    const eBtn = document.getElementById('esb-' + key);
-    if (eBtn) eBtn.classList.toggle('has-data', photoCounts[stage] > 0);
-    const pip = document.getElementById('pip-' + key);
-    if (pip) pip.classList.toggle('done', photoCounts[stage] > 0);
+  const key = stage.replace('.','_');
+  const el = document.getElementById('sc-' + key);
+  if (el) el.innerText = photoCounts[stage];
+  const el2 = document.getElementById('esc-' + key);
+  if (el2) el2.innerText = photoCounts[stage];
+  const btn = document.getElementById('sb-' + key);
+  if (btn) btn.classList.toggle('has-data', photoCounts[stage] > 0);
+  const eBtn = document.getElementById('esb-' + key);
+  if (eBtn) eBtn.classList.toggle('has-data', photoCounts[stage] > 0);
+  const pip = document.getElementById('pip-' + key);
+  if (pip) pip.classList.toggle('done', photoCounts[stage] > 0);
 }
 
 function renderThumbs() {
-    const row = document.getElementById('thumb-row');
-    const total = captures.length;
-    const unassigned = captures.filter(c => !c.stage).length;
-    document.getElementById('thumbCount').innerText = total > 0
-        ? `${total} photos${unassigned > 0 ? ` · ${unassigned} unassigned` : ' · all assigned ✓'}`
-        : '';
-
-    if (captures.length === 0) {
-        row.innerHTML = Array(5).fill(0).map(() => `<div class="thumb thumb-empty">+</div>`).join('');
-        return;
-    }
-
-    row.innerHTML = captures.map(c => `
-        <div class="thumb" onclick="openEditor('${c.id}')">
-            <img class="thumb-img" src="${c.dataUrl}">
-            <div class="thumb-badge ${c.stage ? '' : 'unassigned'}">${c.stage ? 'C' + c.stage : '?'}</div>
-            <div class="thumb-del" onclick="event.stopPropagation(); deleteCapture('${c.id}')">✕</div>
-        </div>
-    `).join('');
+  const row = document.getElementById('thumb-row');
+  const total = captures.length;
+  const unassigned = captures.filter(c => !c.stage).length;
+  document.getElementById('thumbCount').innerText = total > 0
+    ? `${total} photos${unassigned > 0 ? ` · ${unassigned} unassigned` : ' · all assigned ✓'}`
+    : '';
+  if (captures.length === 0) {
+    row.innerHTML = Array(5).fill(0).map(() => `<div class="thumb thumb-empty">+</div>`).join('');
+    return;
+  }
+  row.innerHTML = captures.map(c => `
+    <div class="thumb" onclick="openEditor('${c.id}')">
+      <img class="thumb-img" src="${c.dataUrl}">
+      <div class="thumb-badge ${c.stage ? '' : 'unassigned'}">${c.stage ? 'C' + c.stage : '?'}</div>
+      <div class="thumb-del" onclick="event.stopPropagation(); deleteCapture('${c.id}')">✕</div>
+    </div>
+  `).join('');
 }
 
 function updateUploadBtn() {
-    const ready = captures.filter(c => c.stage).length;
-    const btn = document.getElementById('upload-btn');
-    btn.classList.toggle('disabled', ready === 0);
-    btn.innerHTML = `<i class="bi bi-cloud-upload-fill"></i> Upload${ready > 0 ? ' (' + ready + ')' : ' All'}`;
+  const ready = captures.filter(c => c.stage).length;
+  const btn = document.getElementById('upload-btn');
+  btn.classList.toggle('disabled', ready === 0);
+  btn.innerHTML = `<i class="bi bi-cloud-upload-fill"></i> Upload${ready > 0 ? ' (' + ready + ')' : ' All'}`;
 }
 
 function setStatus(msg, type) {
-    const el = document.getElementById('appStatus');
-    el.innerText = msg;
-    el.className = 'app-status ' + (type || '');
+  const el = document.getElementById('appStatus');
+  el.innerText = msg;
+  el.className = 'app-status ' + (type || '');
 }
 
 function showStats() {
-    const list = document.getElementById('statsList');
-    const max = Math.max(...STAGES.map(s => photoCounts[s]), 1);
-    const totalPhotos = STAGES.reduce((sum, s) => sum + photoCounts[s], 0);
-    const minCount = Math.min(...STAGES.map(s => photoCounts[s]));
-    const needed = Math.max(0, 200 - minCount);
-    list.innerHTML = STAGES.map(s => `
-        <div class="stats-row">
-            <div class="stats-stage">C${s}</div>
-            <div class="stats-bar-wrap"><div class="stats-bar" style="width:${Math.round((photoCounts[s]/max)*100)}%"></div></div>
-            <div class="stats-count">${photoCounts[s]} photos</div>
-        </div>
-    `).join('');
-    document.getElementById('statsTotal').innerText = `Total: ${totalPhotos} · ${needed > 0 ? `Need ${needed} more per stage` : '✓ Ready to train!'}`;
-    document.getElementById('stats-panel').classList.remove('hidden');
+  const list = document.getElementById('statsList');
+  const max = Math.max(...STAGES.map(s => photoCounts[s]), 1);
+  const totalPhotos = STAGES.reduce((sum, s) => sum + photoCounts[s], 0);
+  const minCount = Math.min(...STAGES.map(s => photoCounts[s]));
+  const needed = Math.max(0, 200 - minCount);
+  list.innerHTML = STAGES.map(s => `
+    <div class="stats-row">
+      <div class="stats-stage">C${s}</div>
+      <div class="stats-bar-wrap"><div class="stats-bar" style="width:${Math.round((photoCounts[s]/max)*100)}%"></div></div>
+      <div class="stats-count">${photoCounts[s]} photos</div>
+    </div>
+  `).join('');
+  document.getElementById('statsTotal').innerText = `Total: ${totalPhotos} · ${needed > 0 ? `Need ${needed} more per stage` : '✓ Ready to train!'}`;
+  document.getElementById('stats-panel').classList.remove('hidden');
 }
 
 function hideStats() {
-    document.getElementById('stats-panel').classList.add('hidden');
+  document.getElementById('stats-panel').classList.add('hidden');
 }
 </script>
 </body>
