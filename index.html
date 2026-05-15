@@ -33,15 +33,58 @@
         .pip.active { background: #fff; }
 
         /* ── CAMERA ── */
-        #cam-wrap { position: relative; width: 100%; height: 30vh; background: #000; flex-shrink: 0; overflow: hidden; }
-        #webcam { width: 100%; height: 100%; object-fit: cover; display: block; }
-        #crosshair {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80%; height: 75%;
-            border: 2px solid rgba(249,215,28,0.65);
-            border-radius: 8px; pointer-events: none;
+        #cam-wrap {
+            position: relative;
+            width: 100%;
+            height: 38vh;  /* taller to show more of the box */
+            background: #000;
+            flex-shrink: 0;
+            overflow: hidden;
         }
+        #webcam {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            /* Fill width, let height overflow — shows wider FOV */
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+        }
+
+        /* Crosshair — wide rectangle representing the banana box */
+        #crosshair {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 88%;   /* wide */
+            height: 72%;  /* not too tall — banana box is wider than tall */
+            border: 2.5px solid rgba(249,215,28,0.8);
+            border-radius: 8px;
+            pointer-events: none;
+            /* Corner guides */
+            box-shadow: inset 0 0 0 1px rgba(249,215,28,0.15);
+        }
+        /* Corner accents */
+        #crosshair::before, #crosshair::after {
+            content: '';
+            position: absolute;
+            width: 20px; height: 20px;
+            border-color: var(--accent);
+            border-style: solid;
+        }
+        #crosshair::before {
+            top: -2px; left: -2px;
+            border-width: 3px 0 0 3px;
+            border-radius: 4px 0 0 0;
+        }
+        #crosshair::after {
+            bottom: -2px; right: -2px;
+            border-width: 0 3px 3px 0;
+            border-radius: 0 0 4px 0;
+        }
+
         #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity 0.08s; }
         #stage-overlay {
             position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
@@ -49,6 +92,15 @@
             padding: 4px 14px; border-radius: 20px;
             font-size: 0.6rem; font-weight: 900; color: var(--accent);
             text-transform: uppercase; letter-spacing: 2px; white-space: nowrap; display: none;
+        }
+        /* Guide text inside crosshair */
+        #cam-guide {
+            position: absolute;
+            bottom: calc(14% + 8px);
+            left: 50%; transform: translateX(-50%);
+            font-size: 0.48rem; font-weight: 700; color: rgba(249,215,28,0.6);
+            text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
+            pointer-events: none;
         }
         #cam-init {
             position: absolute; inset: 0; background: #000;
@@ -73,7 +125,7 @@
         /* ── BOTTOM PANEL ── */
         #bottom-panel { flex: 1; display: flex; flex-direction: column; background: var(--card); overflow: hidden; min-height: 0; }
 
-        /* ── STAGE SELECTOR (prominent) ── */
+        /* ── STAGE SELECTOR ── */
         #stage-section { padding: 8px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
         #stage-label {
             font-size: 0.5rem; font-weight: 700; color: var(--dim);
@@ -95,11 +147,7 @@
             gap: 1px; transition: all 0.12s;
         }
         .stage-btn:active { transform: scale(0.93); }
-        .stage-btn.selected {
-            background: var(--accent); color: #000;
-            border-color: var(--accent);
-            box-shadow: 0 0 12px rgba(249,215,28,0.4);
-        }
+        .stage-btn.selected { background: var(--accent); color: #000; border-color: var(--accent); box-shadow: 0 0 12px rgba(249,215,28,0.4); }
         .stage-btn.has-data { border-color: rgba(249,215,28,0.35); }
         .s-count { font-size: 0.42rem; font-weight: 700; }
         .stage-btn.selected .s-count { color: #000; }
@@ -116,7 +164,9 @@
         #thumb-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
         #thumb-row::-webkit-scrollbar { display: none; }
         .thumb {
-            width: 58px; height: 46px; border-radius: 8px;
+            /* Keep thumbnails in the same aspect ratio as the crosshair */
+            width: 80px; height: 50px;
+            border-radius: 8px;
             background: var(--card2); border: 1.5px solid var(--border2);
             flex-shrink: 0; position: relative; overflow: hidden;
             cursor: pointer; transition: border-color 0.15s;
@@ -141,9 +191,10 @@
         .thumb-empty {
             display: flex; align-items: center; justify-content: center;
             font-size: 18px; color: rgba(255,255,255,0.1);
+            width: 80px; height: 50px;
         }
 
-        /* ── LIBRARY + ACTION BAR ── */
+        /* ── ACTION BAR ── */
         #action-bar {
             display: flex; gap: 6px;
             padding: 8px 10px max(env(safe-area-inset-bottom), 10px);
@@ -163,18 +214,14 @@
         #stats-btn { flex: 0 0 auto; padding: 12px 14px; background: var(--card2); color: var(--text); border: 1px solid var(--border2); border-radius: 10px; cursor: pointer; font-size: 1rem; }
         #file-input { display: none; }
 
-        /* ── FULL SCREEN THUMBNAIL EDITOR ── */
+        /* ── PHOTO EDITOR ── */
         #photo-editor {
             position: fixed; inset: 0; background: #000;
             z-index: 300; display: flex; flex-direction: column;
         }
         #photo-editor.hidden { display: none; }
-        #editor-photo-wrap {
-            height: 50vh; position: relative; background: #000; flex-shrink: 0;
-        }
-        #editor-photo {
-            width: 100%; height: 100%; object-fit: contain; display: block;
-        }
+        #editor-photo-wrap { height: 50vh; position: relative; background: #000; flex-shrink: 0; }
+        #editor-photo { width: 100%; height: 100%; object-fit: contain; display: block; }
         #editor-back {
             position: absolute; top: 14px; left: 14px;
             background: rgba(0,0,0,0.65); border: 1px solid rgba(255,255,255,0.2);
@@ -195,25 +242,17 @@
             padding: 12px 10px max(env(safe-area-inset-bottom), 12px);
             overflow: hidden;
         }
-        #editor-label {
-            font-size: 0.5rem; font-weight: 700; color: var(--dim);
-            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
-        }
+        #editor-label { font-size: 0.5rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
         #editor-stage-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; flex: 1; }
         .editor-stage-btn {
             background: var(--card2); border: 1px solid var(--border2);
             border-radius: 8px; color: var(--text);
             font-size: 0.72rem; font-weight: 900;
             cursor: pointer; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; gap: 2px;
-            transition: all 0.12s;
+            align-items: center; justify-content: center; gap: 2px; transition: all 0.12s;
         }
         .editor-stage-btn:active { transform: scale(0.93); }
-        .editor-stage-btn.selected {
-            background: var(--accent); color: #000;
-            border-color: var(--accent);
-            box-shadow: 0 0 12px rgba(249,215,28,0.4);
-        }
+        .editor-stage-btn.selected { background: var(--accent); color: #000; border-color: var(--accent); box-shadow: 0 0 12px rgba(249,215,28,0.4); }
         .editor-stage-btn.has-data { border-color: rgba(249,215,28,0.3); }
         .e-count { font-size: 0.42rem; font-weight: 700; }
         .editor-stage-btn.selected .e-count { color: #000; }
@@ -268,7 +307,7 @@
     </button>
 </div>
 
-<!-- Photo Editor (full screen thumbnail) -->
+<!-- Photo Editor -->
 <div id="photo-editor" class="hidden">
     <div id="editor-photo-wrap">
         <img id="editor-photo" src="" alt="">
@@ -296,6 +335,7 @@
         <div id="crosshair"></div>
         <div id="flash"></div>
         <div id="stage-overlay"></div>
+        <div id="cam-guide">Align banana box to frame</div>
         <div id="cam-init" onclick="startCamera()">
             <i class="bi bi-camera-fill"></i>
             <div id="cam-init-title">Tap to Start Camera</div>
@@ -308,8 +348,6 @@
     </div>
 
     <div id="bottom-panel">
-
-        <!-- Stage selector — prominent -->
         <div id="stage-section">
             <div id="stage-label">
                 <span>Select color stage</span>
@@ -317,8 +355,6 @@
             </div>
             <div id="stage-grid"></div>
         </div>
-
-        <!-- Thumbnails -->
         <div id="thumb-section">
             <div id="thumb-label">
                 Captured photos
@@ -326,8 +362,6 @@
             </div>
             <div id="thumb-row"></div>
         </div>
-
-        <!-- Actions -->
         <div id="action-bar">
             <button class="act-btn" id="library-btn" onclick="openLibrary()">
                 <i class="bi bi-images"></i> From Library
@@ -339,7 +373,6 @@
                 <i class="bi bi-bar-chart-fill"></i>
             </button>
         </div>
-
     </div>
 </div>
 
@@ -351,7 +384,6 @@
     <button id="close-stats" onclick="hideStats()">← Back</button>
 </div>
 
-<!-- Hidden file input for library -->
 <input type="file" id="file-input" accept="image/*" multiple onchange="handleLibraryFiles(event)">
 
 <script>
@@ -431,14 +463,32 @@ async function startCamera() {
     prog.innerText = 'Starting camera...';
 
     try {
+        // Request wide landscape format to avoid zoom-in on box
         cameraStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 }, aspectRatio: { ideal: 16/9 } },
+            video: {
+                facingMode: { ideal: 'environment' },
+                width:  { ideal: 1920, min: 1280 },
+                height: { ideal: 1080, min: 720 },
+                aspectRatio: { ideal: 16/9 }
+            },
             audio: false
         });
+
         const vid = document.getElementById('webcam');
         vid.srcObject = cameraStream;
         await new Promise(r => { vid.onloadedmetadata = r; });
         vid.play();
+
+        // Try to zoom out if browser supports it
+        const track = cameraStream.getVideoTracks()[0];
+        if (track) {
+            const caps = track.getCapabilities();
+            if (caps.zoom) {
+                // Set zoom to minimum (widest FOV)
+                await track.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] });
+            }
+        }
+
         init.classList.add('hidden');
         cameraReady = true;
         document.getElementById('capture-btn').classList.remove('disabled');
@@ -463,25 +513,69 @@ function restartCamera() {
     document.getElementById('cam-init-prog').style.display = 'none';
 }
 
-// ── CAPTURE ───────────────────────────────────────────────────
+// ── CAPTURE — crops to crosshair rectangle exactly ────────────
 function capturePhoto() {
     if (!cameraReady) return;
+
     const flash = document.getElementById('flash');
     flash.style.opacity = '1';
     setTimeout(() => flash.style.opacity = '0', 120);
 
-    const vid = document.getElementById('webcam');
+    const vid       = document.getElementById('webcam');
+    const camWrap   = document.getElementById('cam-wrap');
+    const crosshair = document.getElementById('crosshair');
+
+    // Get pixel positions of video and crosshair relative to cam-wrap
+    const wrapRect  = camWrap.getBoundingClientRect();
+    const crossRect = crosshair.getBoundingClientRect();
+
+    // Video actual rendered dimensions (may differ from element size due to object-fit:cover)
+    const vidW = vid.videoWidth;
+    const vidH = vid.videoHeight;
+    const elW  = camWrap.offsetWidth;
+    const elH  = camWrap.offsetHeight;
+
+    // Scale factors between video pixels and screen pixels (object-fit: cover)
+    const scaleX = vidW / elW;
+    const scaleY = vidH / elH;
+
+    // But with cover, one axis is clipped — find the dominant scale
+    const coverScale = Math.max(scaleX, scaleY);
+
+    // Offset of video within element (centered)
+    const renderedW = vidW / coverScale;
+    const renderedH = vidH / coverScale;
+    const offsetX   = (elW - renderedW) / 2;
+    const offsetY   = (elH - renderedH) / 2;
+
+    // Crosshair position relative to cam-wrap
+    const cx = crossRect.left - wrapRect.left;
+    const cy = crossRect.top  - wrapRect.top;
+    const cw = crossRect.width;
+    const ch = crossRect.height;
+
+    // Map crosshair screen coords back to video pixel coords
+    const srcX = (cx - offsetX) * coverScale;
+    const srcY = (cy - offsetY) * coverScale;
+    const srcW = cw * coverScale;
+    const srcH = ch * coverScale;
+
+    // Draw only the crosshair region to canvas
     const canvas = document.createElement('canvas');
-    canvas.width = vid.videoWidth;
-    canvas.height = vid.videoHeight;
-    canvas.getContext('2d').drawImage(vid, 0, 0);
+    canvas.width  = Math.round(srcW);
+    canvas.height = Math.round(srcH);
+    canvas.getContext('2d').drawImage(
+        vid,
+        Math.round(srcX), Math.round(srcY), Math.round(srcW), Math.round(srcH), // source crop
+        0, 0, canvas.width, canvas.height                                          // destination
+    );
 
     canvas.toBlob(blob => {
-        const id = 'cap_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+        const id = 'cap_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
         captures.push({ id, dataUrl: canvas.toDataURL('image/jpeg', 0.88), blob, stage: selectedStage });
         renderThumbs();
         updateUploadBtn();
-        setStatus(`Photo captured for Color ${selectedStage} (${captures.filter(c=>c.stage===selectedStage).length} total)`, 'ready');
+        setStatus(`Photo captured for Color ${selectedStage} (${captures.filter(c => c.stage === selectedStage).length} total)`, 'ready');
     }, 'image/jpeg', 0.88);
 }
 
@@ -499,7 +593,6 @@ function selectStage(stage) {
     ov.innerText = 'Color ' + stage;
     ov.style.display = 'block';
 
-    // If camera not started yet, start it now
     if (!cameraReady) {
         startCamera();
     } else {
@@ -508,7 +601,7 @@ function selectStage(stage) {
     }
 }
 
-// ── LIBRARY UPLOAD ────────────────────────────────────────────
+// ── LIBRARY ───────────────────────────────────────────────────
 function openLibrary() {
     document.getElementById('file-input').click();
 }
@@ -523,9 +616,8 @@ function handleLibraryFiles(event) {
         const reader = new FileReader();
         reader.onload = (e) => {
             const dataUrl = e.target.result;
-            // Convert dataUrl to blob
             fetch(dataUrl).then(r => r.blob()).then(blob => {
-                const id = 'lib_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+                const id = 'lib_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
                 captures.push({ id, dataUrl, blob, stage: selectedStage || null });
                 loaded++;
                 if (loaded === files.length) {
@@ -537,8 +629,6 @@ function handleLibraryFiles(event) {
         };
         reader.readAsDataURL(file);
     });
-
-    // Reset file input so same files can be selected again
     event.target.value = '';
 }
 
@@ -547,7 +637,6 @@ function openEditor(id) {
     const cap = captures.find(c => c.id === id);
     if (!cap) return;
     editingId = id;
-
     document.getElementById('editor-photo').src = cap.dataUrl;
     updateEditorBadge(cap.stage);
     updateEditorGrid(cap.stage);
@@ -572,8 +661,9 @@ function editorSelectStage(stage) {
 }
 
 function updateEditorBadge(stage) {
-    const badge = document.getElementById('editor-current-badge');
-    badge.innerText = stage ? `Color ${stage} assigned ✓` : 'No color assigned — tap below';
+    document.getElementById('editor-current-badge').innerText = stage
+        ? `Color ${stage} assigned ✓`
+        : 'No color assigned — tap below';
 }
 
 function updateEditorGrid(currentStage) {
@@ -592,7 +682,7 @@ function deleteCapture(id) {
     setStatus(`Photo removed — ${captures.length} remaining`, captures.length > 0 ? 'ready' : '');
 }
 
-// ── UPLOAD ALL ────────────────────────────────────────────────
+// ── UPLOAD ────────────────────────────────────────────────────
 async function uploadAll() {
     const toUpload = captures.filter(c => c.stage);
     if (toUpload.length === 0) { setStatus('Assign color stages to photos first!', 'err'); return; }
@@ -704,20 +794,20 @@ function buildPips() {
 
 function updateCount(stage) {
     const key = stage.replace('.','_');
-    const el = document.getElementById('sc-' + key);
-    if (el) el.innerText = photoCounts[stage];
-    const el2 = document.getElementById('esc-' + key);
-    if (el2) el2.innerText = photoCounts[stage];
-    const btn = document.getElementById('sb-' + key);
-    if (btn) btn.classList.toggle('has-data', photoCounts[stage] > 0);
-    const eBtn = document.getElementById('esb-' + key);
-    if (eBtn) eBtn.classList.toggle('has-data', photoCounts[stage] > 0);
+    ['sc-','esc-'].forEach(prefix => {
+        const el = document.getElementById(prefix + key);
+        if (el) el.innerText = photoCounts[stage];
+    });
+    ['sb-','esb-'].forEach(prefix => {
+        const btn = document.getElementById(prefix + key);
+        if (btn) btn.classList.toggle('has-data', photoCounts[stage] > 0);
+    });
     const pip = document.getElementById('pip-' + key);
     if (pip) pip.classList.toggle('done', photoCounts[stage] > 0);
 }
 
 function renderThumbs() {
-    const row = document.getElementById('thumb-row');
+    const row   = document.getElementById('thumb-row');
     const total = captures.length;
     const unassigned = captures.filter(c => !c.stage).length;
     document.getElementById('thumbCount').innerText = total > 0
@@ -753,10 +843,10 @@ function setStatus(msg, type) {
 
 function showStats() {
     const list = document.getElementById('statsList');
-    const max = Math.max(...STAGES.map(s => photoCounts[s]), 1);
+    const max  = Math.max(...STAGES.map(s => photoCounts[s]), 1);
     const totalPhotos = STAGES.reduce((sum, s) => sum + photoCounts[s], 0);
-    const minCount = Math.min(...STAGES.map(s => photoCounts[s]));
-    const needed = Math.max(0, 200 - minCount);
+    const minCount    = Math.min(...STAGES.map(s => photoCounts[s]));
+    const needed      = Math.max(0, 200 - minCount);
     list.innerHTML = STAGES.map(s => `
         <div class="stats-row">
             <div class="stats-stage">C${s}</div>
