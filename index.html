@@ -485,7 +485,8 @@ function capturePhoto() {
     const w = Math.min(Math.round(srcW), vidW - x);
     const h = Math.min(Math.round(srcH), vidH - y);
 
-    setStatus(`Crop: ${x},${y} ${w}x${h} from ${vidW}x${vidH}`, 'busy');
+    // DEBUG — remove after testing
+    alert(`Video: ${vidW}x${vidH}\nWrap: ${Math.round(wrapW)}x${Math.round(wrapH)}\nScale: ${scale.toFixed(2)}\nCrop: ${x},${y} → ${w}x${h}`);
 
     const canvas = document.createElement('canvas');
     canvas.width  = w;
