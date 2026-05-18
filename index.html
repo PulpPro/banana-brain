@@ -489,13 +489,13 @@ function capturePhoto() {
         const origW = vid.videoWidth;   // 1080 (portrait width)
         const origH = vid.videoHeight;  // 1920 (portrait height)
 
-        // Draw the full video rotated 90° CCW onto a landscape canvas
+        // Draw the full video rotated 90° CW onto a landscape canvas
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width  = origH; // 1920
         tempCanvas.height = origW; // 1080
         const tempCtx = tempCanvas.getContext('2d');
         tempCtx.translate(origH / 2, origW / 2);
-        tempCtx.rotate(Math.PI / 2);
+        tempCtx.rotate(-Math.PI / 2);
         tempCtx.drawImage(vid, -origW / 2, -origH / 2, origW, origH);
 
         // Now crop from the rotated landscape canvas
