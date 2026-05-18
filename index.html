@@ -456,15 +456,29 @@ function capturePhoto() {
     const scaleY = vidH / wrapH;
     const scale  = Math.max(scaleX, scaleY);
 
-    // Video pixels hidden off each edge
-    const offX = (vidW - wrapW * scale) / 2;
-    const offY = (vidH - wrapH * scale) / 2;
+    // With cover, the video is scaled up so both dimensions fill or exceed the element.
+    // The excess is cropped equally on both sides.
+    // rendered video size in element pixels:
+    const rendW = vidW / scale;
+    const rendH = vidH / scale;
 
-    // Crosshair percentages → video pixel coordinates
-    const srcX = offX + (wrapW * CROP_X) * scale;
-    const srcY = offY + (wrapH * CROP_Y) * scale;
-    const srcW = (wrapW * CROP_W) * scale;
-    const srcH = (wrapH * CROP_H) * scale;
+    // how much of the element is NOT covered (negative = video overflows = cropped)
+    // We need how much video is OUTSIDE the element on each side (in video pixels)
+    const overflowX = (vidW - rendW * scale) / 2; // always 0 or positive
+    const overflowY = (vidH - rendH * scale) / 2;
+
+    // Crosshair in element pixels
+    const chX = wrapW * CROP_X;
+    const chY = wrapH * CROP_Y;
+    const chW = wrapW * CROP_W;
+    const chH = wrapH * CROP_H;
+
+    // The element shows video starting at -overflowX in video coords (center aligned)
+    // So element pixel 0 = video pixel overflowX
+    const srcX = overflowX + chX * scale;
+    const srcY = overflowY + chY * scale;
+    const srcW = chW * scale;
+    const srcH = chH * scale;
 
     const x = Math.max(0, Math.round(srcX));
     const y = Math.max(0, Math.round(srcY));
