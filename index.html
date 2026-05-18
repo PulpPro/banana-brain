@@ -439,29 +439,48 @@ function capturePhoto() {
     const vid     = document.getElementById('webcam');
     const camWrap = document.getElementById('cam-wrap');
 
-    // Draw video at display size — browser handles all orientation/rotation.
-    // Then crop the crosshair region from the display-scale canvas.
+    // 1. Get real underlying video resolution coordinates instead of display layout metrics
+    const vWidth  = vid.videoWidth;
+    const vHeight = vid.videoHeight;
+
+    // 2. Derive simulated container viewport bounding values matching 'object-fit: cover' behavior
     const wrapRect = camWrap.getBoundingClientRect();
-    const wrapW = wrapRect.width;
-    const wrapH = wrapRect.height;
+    const aspectContainer = wrapRect.width / wrapRect.height;
+    const aspectVideo     = vWidth / vHeight;
 
-    // Full frame at display resolution
-    const fullCanvas = document.createElement('canvas');
-    fullCanvas.width  = wrapW;
-    fullCanvas.height = wrapH;
-    fullCanvas.getContext('2d').drawImage(vid, 0, 0, wrapW, wrapH);
+    let testWidth, testHeight;
+    let sLeft = 0;
+    let sTop  = 0;
 
-    // Crosshair region in display pixels
-    const cx = Math.round(wrapW * CROP_X);
-    const cy = Math.round(wrapH * CROP_Y);
-    const cw = Math.round(wrapW * CROP_W);
-    const ch = Math.round(wrapH * CROP_H);
+    if (aspectVideo > aspectContainer) {
+        // Video is wider than the container element
+        testHeight = vHeight;
+        testWidth  = vHeight * aspectContainer;
+        sLeft      = (vWidth - testWidth) / 2;
+    } else {
+        // Video is taller than the container element
+        testWidth  = vWidth;
+        testHeight = vWidth / aspectContainer;
+        sTop       = (vHeight - testHeight) / 2;
+    }
 
-    // Crop canvas
-    const canvas = document.createElement('canvas');
-    canvas.width  = cw;
-    canvas.height = ch;
-    canvas.getContext('2d').drawImage(fullCanvas, cx, cy, cw, ch, 0, 0, cw, ch);
+    // 3. Map relative UI overlay percentages down to our exact video pixel offsets
+    const cropX = sLeft + (testWidth * CROP_X);
+    const cropY = sTop + (testHeight * CROP_Y);
+    const cropW = testWidth * CROP_W;
+    const cropH = testHeight * CROP_H;
+
+    // 4. Instantiate isolated output slice target
+    const canvas  = document.createElement('canvas');
+    canvas.width  = Math.round(cropW);
+    canvas.height = Math.round(cropH);
+
+    // 5. Draw the precise slice slice region 
+    canvas.getContext('2d').drawImage(
+        vid,
+        Math.round(cropX), Math.round(cropY), Math.round(cropW), Math.round(cropH),
+        0, 0, canvas.width, canvas.height
+    );
 
     canvas.toBlob(blob => {
         const id = 'cap_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
