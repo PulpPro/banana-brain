@@ -15,10 +15,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         html, body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; height: 100%; overflow: hidden; }
         body { display: flex; flex-direction: column; height: 100dvh; }
-
         #app { display: flex; flex-direction: column; height: 100dvh; }
-
-        /* ── HEADER ── */
         .header { background: var(--card); padding: 10px 14px 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         .app-title { font-size: 0.72rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
@@ -30,8 +27,6 @@
         .pip { flex: 1; height: 3px; border-radius: 3px; background: var(--border2); transition: background 0.3s; }
         .pip.done   { background: var(--accent); }
         .pip.active { background: #fff; }
-
-        /* ── CAMERA ── */
         #cam-wrap {
             position: relative;
             width: 100%;
@@ -50,7 +45,6 @@
             object-position: center;
             display: block;
         }
-        /* Crosshair — wide rectangle representing the banana box */
         #crosshair {
             position: absolute;
             top: 50%; left: 50%;
@@ -61,7 +55,6 @@
             border-radius: 8px;
             pointer-events: none;
         }
-        /* Corner accents */
         #crosshair::before, #crosshair::after {
             content: '';
             position: absolute;
@@ -69,17 +62,8 @@
             border-color: var(--accent);
             border-style: solid;
         }
-        #crosshair::before {
-            top: -2px; left: -2px;
-            border-width: 3px 0 0 3px;
-            border-radius: 4px 0 0 0;
-        }
-        #crosshair::after {
-            bottom: -2px; right: -2px;
-            border-width: 0 3px 3px 0;
-            border-radius: 0 0 4px 0;
-        }
-
+        #crosshair::before { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+        #crosshair::after  { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
         #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity 0.08s; }
         #stage-overlay {
             position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
@@ -89,11 +73,9 @@
             text-transform: uppercase; letter-spacing: 2px; white-space: nowrap; display: none;
         }
         #cam-guide {
-            position: absolute;
-            bottom: 14px; left: 50%; transform: translateX(-50%);
+            position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
             font-size: 0.48rem; font-weight: 700; color: rgba(249,215,28,0.55);
-            text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
-            pointer-events: none;
+            text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; pointer-events: none;
         }
         #cam-init {
             position: absolute; inset: 0; background: #000;
@@ -114,11 +96,7 @@
         #capture-btn:active { transform: scale(0.9); }
         #capture-btn.disabled { opacity: 0.25; pointer-events: none; }
         .capture-inner { width: 40px; height: 40px; border-radius: 50%; background: #fff; }
-
-        /* ── BOTTOM PANEL ── */
         #bottom-panel { flex: 1; display: flex; flex-direction: column; background: var(--card); overflow: hidden; min-height: 0; }
-
-        /* ── STAGE SELECTOR ── */
         #stage-section { padding: 8px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
         #stage-label {
             font-size: 0.5rem; font-weight: 700; color: var(--dim);
@@ -145,8 +123,6 @@
         .s-count { font-size: 0.42rem; font-weight: 700; }
         .stage-btn.selected .s-count { color: #000; }
         .stage-btn:not(.selected) .s-count { color: var(--accent); }
-
-        /* ── THUMBNAILS ── */
         #thumb-section { padding: 7px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
         #thumb-label {
             font-size: 0.46rem; font-weight: 700; color: var(--dim);
@@ -157,19 +133,16 @@
         #thumb-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
         #thumb-row::-webkit-scrollbar { display: none; }
         .thumb {
-            width: 80px; height: 50px;
-            border-radius: 8px;
+            width: 80px; height: 50px; border-radius: 8px;
             background: var(--card2); border: 1.5px solid var(--border2);
-            flex-shrink: 0; position: relative; overflow: hidden;
-            cursor: pointer; transition: border-color 0.15s;
+            flex-shrink: 0; position: relative; overflow: hidden; cursor: pointer;
         }
         .thumb:active { transform: scale(0.95); }
         .thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .thumb-badge {
             position: absolute; bottom: 0; left: 0; right: 0;
             background: rgba(0,0,0,0.8); padding: 2px 0;
-            font-size: 7px; font-weight: 900;
-            color: var(--accent); text-align: center;
+            font-size: 7px; font-weight: 900; color: var(--accent); text-align: center;
         }
         .thumb-badge.unassigned { color: var(--red); }
         .thumb-del {
@@ -180,24 +153,12 @@
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; z-index: 10;
         }
-        .thumb-empty {
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px; color: rgba(255,255,255,0.1);
-            width: 80px; height: 50px;
-        }
-
-        /* ── ACTION BAR ── */
-        #action-bar {
-            display: flex; gap: 6px;
-            padding: 8px 10px max(env(safe-area-inset-bottom), 10px);
-            flex-shrink: 0;
-        }
+        .thumb-empty { display: flex; align-items: center; justify-content: center; font-size: 18px; color: rgba(255,255,255,0.1); width: 80px; height: 50px; }
+        #action-bar { display: flex; gap: 6px; padding: 8px 10px max(env(safe-area-inset-bottom), 10px); flex-shrink: 0; }
         .act-btn {
             flex: 1; padding: 12px; border-radius: 10px; border: none;
-            font-weight: 900; font-size: 0.65rem;
-            text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 5px;
-            transition: opacity 0.15s;
+            font-weight: 900; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: opacity 0.15s;
         }
         .act-btn:active { opacity: 0.7; }
         #library-btn { background: var(--card2); color: var(--text); border: 1px solid var(--border2); }
@@ -205,12 +166,7 @@
         #upload-btn.disabled { opacity: 0.3; pointer-events: none; }
         #stats-btn { flex: 0 0 auto; padding: 12px 14px; background: var(--card2); color: var(--text); border: 1px solid var(--border2); border-radius: 10px; cursor: pointer; font-size: 1rem; }
         #file-input { display: none; }
-
-        /* ── PHOTO EDITOR ── */
-        #photo-editor {
-            position: fixed; inset: 0; background: #000;
-            z-index: 300; display: flex; flex-direction: column;
-        }
+        #photo-editor { position: fixed; inset: 0; background: #000; z-index: 300; display: flex; flex-direction: column; }
         #photo-editor.hidden { display: none; }
         #editor-photo-wrap { height: 50vh; position: relative; background: #000; flex-shrink: 0; }
         #editor-photo { width: 100%; height: 100%; object-fit: contain; display: block; }
@@ -218,8 +174,7 @@
             position: absolute; top: 14px; left: 14px;
             background: rgba(0,0,0,0.65); border: 1px solid rgba(255,255,255,0.2);
             color: #fff; font-size: 0.6rem; font-weight: 900;
-            text-transform: uppercase; letter-spacing: 1px;
-            padding: 6px 14px; border-radius: 20px; cursor: pointer; z-index: 5;
+            text-transform: uppercase; letter-spacing: 1px; padding: 6px 14px; border-radius: 20px; cursor: pointer; z-index: 5;
         }
         #editor-current-badge {
             position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
@@ -228,20 +183,13 @@
             font-size: 0.65rem; font-weight: 900; color: var(--accent);
             text-transform: uppercase; letter-spacing: 2px; white-space: nowrap;
         }
-        #editor-bottom {
-            flex: 1; background: var(--card);
-            display: flex; flex-direction: column;
-            padding: 12px 10px max(env(safe-area-inset-bottom), 12px);
-            overflow: hidden;
-        }
+        #editor-bottom { flex: 1; background: var(--card); display: flex; flex-direction: column; padding: 12px 10px max(env(safe-area-inset-bottom), 12px); overflow: hidden; }
         #editor-label { font-size: 0.5rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
         #editor-stage-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; flex: 1; }
         .editor-stage-btn {
-            background: var(--card2); border: 1px solid var(--border2);
-            border-radius: 8px; color: var(--text);
-            font-size: 0.72rem; font-weight: 900;
-            cursor: pointer; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; gap: 2px; transition: all 0.12s;
+            background: var(--card2); border: 1px solid var(--border2); border-radius: 8px; color: var(--text);
+            font-size: 0.72rem; font-weight: 900; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: all 0.12s;
         }
         .editor-stage-btn:active { transform: scale(0.93); }
         .editor-stage-btn.selected { background: var(--accent); color: #000; border-color: var(--accent); box-shadow: 0 0 12px rgba(249,215,28,0.4); }
@@ -249,8 +197,6 @@
         .e-count { font-size: 0.42rem; font-weight: 700; }
         .editor-stage-btn.selected .e-count { color: #000; }
         .editor-stage-btn:not(.selected) .e-count { color: var(--accent); }
-
-        /* ── DRIVE CONNECT ── */
         #drive-screen {
             position: fixed; inset: 0; background: #000;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -261,18 +207,11 @@
         #drive-screen h2 { font-size: 0.9rem; font-weight: 900; color: #fff; letter-spacing: 2px; text-align: center; }
         #drive-screen p  { font-size: 0.6rem; color: var(--dim); text-align: center; line-height: 1.6; }
         #connect-drive-btn {
-            background: #4285f4; color: #fff; border: none;
-            padding: 16px 32px; border-radius: 100px;
-            font-weight: 900; font-size: 0.8rem;
-            text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+            background: #4285f4; color: #fff; border: none; padding: 16px 32px; border-radius: 100px;
+            font-weight: 900; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
             display: flex; align-items: center; gap: 8px;
         }
-
-        /* ── STATS ── */
-        #stats-panel {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.96);
-            z-index: 200; display: flex; flex-direction: column; padding: 20px 16px;
-        }
+        #stats-panel { position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 200; display: flex; flex-direction: column; padding: 20px 16px; }
         #stats-panel.hidden { display: none; }
         .stats-title { font-size: 0.7rem; font-weight: 900; color: var(--accent); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px; }
         .stats-list  { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; }
@@ -283,13 +222,11 @@
         .stats-count { font-size: 0.6rem; font-weight: 900; color: var(--accent); min-width: 52px; text-align: right; }
         .stats-total { font-size: 0.55rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; text-align: center; }
         #close-stats { margin-top: 12px; padding: 14px; border-radius: 10px; background: var(--card2); border: 1px solid var(--border2); color: var(--text); font-weight: 900; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; }
-
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
     </style>
 </head>
 <body>
 
-<!-- Drive Connect -->
 <div id="drive-screen">
     <i class="bi bi-cloud-fill"></i>
     <h2>Connect Google Drive</h2>
@@ -299,7 +236,6 @@
     </button>
 </div>
 
-<!-- Photo Editor -->
 <div id="photo-editor" class="hidden">
     <div id="editor-photo-wrap">
         <img id="editor-photo" src="" alt="">
@@ -312,7 +248,6 @@
     </div>
 </div>
 
-<!-- Main App -->
 <div id="app">
     <div class="header">
         <div class="header-row">
@@ -348,10 +283,7 @@
             <div id="stage-grid"></div>
         </div>
         <div id="thumb-section">
-            <div id="thumb-label">
-                Captured photos
-                <span id="thumbCount"></span>
-            </div>
+            <div id="thumb-label">Captured photos <span id="thumbCount"></span></div>
             <div id="thumb-row"></div>
         </div>
         <div id="action-bar">
@@ -368,7 +300,6 @@
     </div>
 </div>
 
-<!-- Stats -->
 <div id="stats-panel" class="hidden">
     <div class="stats-title">📊 Training Stats</div>
     <div class="stats-list" id="statsList"></div>
@@ -385,6 +316,13 @@ const SCOPES       = 'https://www.googleapis.com/auth/drive.file';
 const FOLDER_NAME  = 'banana-brain';
 const STAGES       = ['1','1.5','2','2.5','3','3.5','4','4.5','5','5.5','6'];
 
+// Crosshair crop — must match CSS exactly
+// CSS: width:88%, height:72%, centered → left offset = 6%, top offset = 14%
+const CROP_X = 0.06;
+const CROP_Y = 0.14;
+const CROP_W = 0.88;
+const CROP_H = 0.72;
+
 let accessToken    = null;
 let rootFolderId   = null;
 let stageFolderIds = {};
@@ -397,7 +335,6 @@ let editingId      = null;
 
 STAGES.forEach(s => photoCounts[s] = 0);
 
-// ── BOOT ──────────────────────────────────────────────────────
 window.addEventListener('load', () => {
     const hash = window.location.hash;
     if (hash && hash.includes('access_token')) {
@@ -441,19 +378,13 @@ async function launchApp(hasDrive) {
     }
 }
 
-// ── CAMERA ────────────────────────────────────────────────────
 async function startCamera() {
-    if (!selectedStage) {
-        setStatus('Select a color stage first!', 'err');
-        return;
-    }
-    const init = document.getElementById('cam-init');
+    if (!selectedStage) { setStatus('Select a color stage first!', 'err'); return; }
     const prog = document.getElementById('cam-init-prog');
     const sub  = document.getElementById('cam-init-sub');
     sub.style.display  = 'none';
     prog.style.display = 'block';
     prog.innerText     = 'Starting camera...';
-
     try {
         cameraStream = await navigator.mediaDevices.getUserMedia({
             video: {
@@ -464,29 +395,23 @@ async function startCamera() {
             },
             audio: false
         });
-
         const vid = document.getElementById('webcam');
         vid.srcObject = cameraStream;
         await new Promise(r => { vid.onloadedmetadata = r; });
         vid.play();
-
-        // Try to set minimum zoom (widest FOV) if supported
         const track = cameraStream.getVideoTracks()[0];
         if (track) {
             const caps = track.getCapabilities();
-            if (caps.zoom) {
-                await track.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] });
-            }
+            if (caps.zoom) await track.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] });
         }
-
-        init.classList.add('hidden');
+        document.getElementById('cam-init').classList.add('hidden');
         cameraReady = true;
         document.getElementById('capture-btn').classList.remove('disabled');
         setStatus(`Color ${selectedStage} selected — capture away!`, 'ready');
     } catch (err) {
         prog.style.color = 'var(--red)';
         prog.innerText   = err.name === 'NotAllowedError'
-            ? 'Camera blocked — AA menu > Website Settings > Camera > Allow'
+            ? 'Camera blocked — allow camera access in settings'
             : 'Camera error: ' + err.message;
     }
 }
@@ -494,8 +419,7 @@ async function startCamera() {
 function restartCamera() {
     if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
     cameraReady = false;
-    const vid = document.getElementById('webcam');
-    vid.srcObject = null;
+    document.getElementById('webcam').srcObject = null;
     document.getElementById('capture-btn').classList.add('disabled');
     const init = document.getElementById('cam-init');
     init.classList.remove('hidden');
@@ -503,7 +427,8 @@ function restartCamera() {
     document.getElementById('cam-init-prog').style.display = 'none';
 }
 
-// ── CAPTURE — crops exactly to crosshair rectangle ────────────
+// CAPTURE — crops to crosshair using fixed CSS percentages
+// No getBoundingClientRect — unreliable on iOS Safari
 function capturePhoto() {
     if (!cameraReady) return;
 
@@ -511,62 +436,38 @@ function capturePhoto() {
     flash.style.opacity = '1';
     setTimeout(() => flash.style.opacity = '0', 120);
 
-    const vid       = document.getElementById('webcam');
-    const camWrap   = document.getElementById('cam-wrap');
-    const crosshair = document.getElementById('crosshair');
+    const vid     = document.getElementById('webcam');
+    const camWrap = document.getElementById('cam-wrap');
 
-    const vidW = vid.videoWidth;
-    const vidH = vid.videoHeight;
-
-    // Element dimensions
+    const vidW  = vid.videoWidth;
+    const vidH  = vid.videoHeight;
     const wrapW = camWrap.offsetWidth;
     const wrapH = camWrap.offsetHeight;
 
-    // Crosshair position within cam-wrap (offsetLeft/Top are relative to offsetParent)
-    // Since crosshair is positioned absolute with translate(-50%,-50%), compute from style
-    // More reliable: use getBoundingClientRect relative to cam-wrap
-    const wrapRect  = camWrap.getBoundingClientRect();
-    const crossRect = crosshair.getBoundingClientRect();
-
-    const cx = crossRect.left - wrapRect.left;
-    const cy = crossRect.top  - wrapRect.top;
-    const cw = crossRect.width;
-    const ch = crossRect.height;
-
-    // object-fit: cover scale — video fills element, cropping the smaller dimension
+    // object-fit: cover — larger scale fills the element, smaller dimension is cropped
     const scaleX = vidW / wrapW;
     const scaleY = vidH / wrapH;
-    const scale  = Math.max(scaleX, scaleY); // cover uses the larger scale
+    const scale  = Math.max(scaleX, scaleY);
 
-    // Rendered video size in element coords
-    const renderedW = vidW / scale;
-    const renderedH = vidH / scale;
+    // How many video pixels are cropped off each side
+    const offX = (vidW - wrapW * scale) / 2;
+    const offY = (vidH - wrapH * scale) / 2;
 
-    // Video is centered — offset of rendered area inside element
-    const offX = (wrapW - renderedW) / 2;
-    const offY = (wrapH - renderedH) / 2;
+    // Crosshair in element pixels → video pixels
+    const srcX = offX + (wrapW * CROP_X) * scale;
+    const srcY = offY + (wrapH * CROP_Y) * scale;
+    const srcW = (wrapW * CROP_W) * scale;
+    const srcH = (wrapH * CROP_H) * scale;
 
-    // Map crosshair screen coords → video pixel coords
-    const srcX = (cx - offX) * scale;
-    const srcY = (cy - offY) * scale;
-    const srcW = cw * scale;
-    const srcH = ch * scale;
+    const x = Math.max(0, Math.round(srcX));
+    const y = Math.max(0, Math.round(srcY));
+    const w = Math.min(Math.round(srcW), vidW - x);
+    const h = Math.min(Math.round(srcH), vidH - y);
 
-    // Clamp to video bounds to be safe
-    const clampedX = Math.max(0, Math.round(srcX));
-    const clampedY = Math.max(0, Math.round(srcY));
-    const clampedW = Math.min(Math.round(srcW), vidW - clampedX);
-    const clampedH = Math.min(Math.round(srcH), vidH - clampedY);
-
-    // Draw only the crosshair region
-    const canvas    = document.createElement('canvas');
-    canvas.width    = clampedW;
-    canvas.height   = clampedH;
-    canvas.getContext('2d').drawImage(
-        vid,
-        clampedX, clampedY, clampedW, clampedH,  // source: crop region in video
-        0, 0, clampedW, clampedH                   // destination: full canvas
-    );
+    const canvas = document.createElement('canvas');
+    canvas.width  = w;
+    canvas.height = h;
+    canvas.getContext('2d').drawImage(vid, x, y, w, h, 0, 0, w, h);
 
     canvas.toBlob(blob => {
         const id = 'cap_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
@@ -577,7 +478,6 @@ function capturePhoto() {
     }, 'image/jpeg', 0.88);
 }
 
-// ── STAGE SELECTION ───────────────────────────────────────────
 function selectStage(stage) {
     selectedStage = stage;
     STAGES.forEach(s => {
@@ -588,41 +488,29 @@ function selectStage(stage) {
     });
     document.getElementById('selectedIndicator').innerText = 'Color ' + stage + ' ✓';
     const ov = document.getElementById('stage-overlay');
-    ov.innerText      = 'Color ' + stage;
-    ov.style.display  = 'block';
-
-    if (!cameraReady) {
-        startCamera();
-    } else {
+    ov.innerText     = 'Color ' + stage;
+    ov.style.display = 'block';
+    if (!cameraReady) startCamera();
+    else {
         document.getElementById('capture-btn').classList.remove('disabled');
         setStatus(`Color ${stage} selected — capture away!`, 'ready');
     }
 }
 
-// ── LIBRARY ───────────────────────────────────────────────────
-function openLibrary() {
-    document.getElementById('file-input').click();
-}
+function openLibrary() { document.getElementById('file-input').click(); }
 
 function handleLibraryFiles(event) {
     const files = Array.from(event.target.files);
     if (!files.length) return;
     setStatus(`Loading ${files.length} photo(s) from library...`, 'busy');
-
     let loaded = 0;
     files.forEach(file => {
-        const reader  = new FileReader();
+        const reader = new FileReader();
         reader.onload = (e) => {
-            const dataUrl = e.target.result;
-            fetch(dataUrl).then(r => r.blob()).then(blob => {
-                const id = 'lib_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-                captures.push({ id, dataUrl, blob, stage: selectedStage || null });
-                loaded++;
-                if (loaded === files.length) {
-                    renderThumbs();
-                    updateUploadBtn();
-                    setStatus(`${files.length} photo(s) loaded — assign colors and upload`, 'ready');
-                }
+            fetch(e.target.result).then(r => r.blob()).then(blob => {
+                const id = 'lib_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+                captures.push({ id, dataUrl: e.target.result, blob, stage: selectedStage || null });
+                if (++loaded === files.length) { renderThumbs(); updateUploadBtn(); setStatus(`${files.length} photo(s) loaded`, 'ready'); }
             });
         };
         reader.readAsDataURL(file);
@@ -630,7 +518,6 @@ function handleLibraryFiles(event) {
     event.target.value = '';
 }
 
-// ── PHOTO EDITOR ──────────────────────────────────────────────
 function openEditor(id) {
     const cap = captures.find(c => c.id === id);
     if (!cap) return;
@@ -659,9 +546,7 @@ function editorSelectStage(stage) {
 }
 
 function updateEditorBadge(stage) {
-    document.getElementById('editor-current-badge').innerText = stage
-        ? `Color ${stage} assigned ✓`
-        : 'No color assigned — tap below';
+    document.getElementById('editor-current-badge').innerText = stage ? `Color ${stage} assigned ✓` : 'No color assigned — tap below';
 }
 
 function updateEditorGrid(currentStage) {
@@ -671,7 +556,6 @@ function updateEditorGrid(currentStage) {
     });
 }
 
-// ── DELETE ────────────────────────────────────────────────────
 function deleteCapture(id) {
     captures = captures.filter(c => c.id !== id);
     renderThumbs();
@@ -680,22 +564,18 @@ function deleteCapture(id) {
     setStatus(`Photo removed — ${captures.length} remaining`, captures.length > 0 ? 'ready' : '');
 }
 
-// ── UPLOAD ────────────────────────────────────────────────────
 async function uploadAll() {
     const toUpload = captures.filter(c => c.stage);
-    if (toUpload.length === 0) { setStatus('Assign color stages to photos first!', 'err'); return; }
-    if (!accessToken)          { setStatus('Not connected to Drive!', 'err'); return; }
-
+    if (!toUpload.length) { setStatus('Assign color stages first!', 'err'); return; }
+    if (!accessToken)     { setStatus('Not connected to Drive!', 'err'); return; }
     const btn = document.getElementById('upload-btn');
     btn.classList.add('disabled');
     let uploaded = 0;
-
     for (const cap of toUpload) {
         try {
             setStatus(`Uploading ${uploaded + 1}/${toUpload.length}...`, 'busy');
             const folderId = await getOrCreateStageFolder(cap.stage);
-            const filename = `color_${cap.stage}_${Date.now()}_${uploaded}.jpg`;
-            await uploadFile(cap.blob, filename, folderId);
+            await uploadFile(cap.blob, `color_${cap.stage}_${Date.now()}_${uploaded}.jpg`, folderId);
             photoCounts[cap.stage] = (photoCounts[cap.stage] || 0) + 1;
             updateCount(cap.stage);
             uploaded++;
@@ -705,7 +585,6 @@ async function uploadAll() {
             return;
         }
     }
-
     captures = captures.filter(c => !c.stage);
     renderThumbs();
     updateUploadBtn();
@@ -713,23 +592,16 @@ async function uploadAll() {
     btn.classList.remove('disabled');
 }
 
-// ── GOOGLE DRIVE ──────────────────────────────────────────────
 async function driveRequest(url, options = {}) {
-    const res = await fetch(url, {
-        ...options,
-        headers: { 'Authorization': 'Bearer ' + accessToken, ...(options.headers || {}) }
-    });
-    if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error?.message || 'Drive error ' + res.status);
-    }
+    const res = await fetch(url, { ...options, headers: { 'Authorization': 'Bearer ' + accessToken, ...(options.headers || {}) } });
+    if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error?.message || 'Drive error ' + res.status); }
     return res.json();
 }
 
 async function getOrCreateFolder(name, parentId) {
-    const q      = `name='${name}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`;
+    const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`;
     const search = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)`);
-    if (search.files && search.files.length > 0) return search.files[0].id;
+    if (search.files?.length) return search.files[0].id;
     const created = await driveRequest('https://www.googleapis.com/drive/v3/files', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] })
@@ -759,106 +631,83 @@ async function loadCounts() {
     for (const stage of STAGES) {
         try {
             const folderId = await getOrCreateStageFolder(stage);
-            const q        = `'${folderId}' in parents and trashed=false`;
-            const res      = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)`);
-            photoCounts[stage] = res.files ? res.files.length : 0;
+            const res = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(`'${folderId}' in parents and trashed=false`)}&fields=files(id)`);
+            photoCounts[stage] = res.files?.length || 0;
             updateCount(stage);
         } catch (e) {}
     }
 }
 
-// ── UI BUILDERS ───────────────────────────────────────────────
 function buildStageGrid() {
     document.getElementById('stage-grid').innerHTML = STAGES.map(s => `
         <button class="stage-btn" id="sb-${s.replace('.','_')}" onclick="selectStage('${s}')">
             ${s}<span class="s-count" id="sc-${s.replace('.','_')}">${photoCounts[s]}</span>
-        </button>
-    `).join('');
+        </button>`).join('');
 }
 
 function buildEditorGrid() {
     document.getElementById('editor-stage-grid').innerHTML = STAGES.map(s => `
         <button class="editor-stage-btn" id="esb-${s.replace('.','_')}" onclick="editorSelectStage('${s}')">
             ${s}<span class="e-count" id="esc-${s.replace('.','_')}">${photoCounts[s]}</span>
-        </button>
-    `).join('');
+        </button>`).join('');
 }
 
 function buildPips() {
     document.getElementById('stagePips').innerHTML = STAGES.map(s =>
-        `<div class="pip" id="pip-${s.replace('.','_')}"></div>`
-    ).join('');
+        `<div class="pip" id="pip-${s.replace('.','_')}"></div>`).join('');
 }
 
 function updateCount(stage) {
     const key = stage.replace('.','_');
-    ['sc-','esc-'].forEach(prefix => {
-        const el = document.getElementById(prefix + key);
-        if (el) el.innerText = photoCounts[stage];
-    });
-    ['sb-','esb-'].forEach(prefix => {
-        const btn = document.getElementById(prefix + key);
-        if (btn) btn.classList.toggle('has-data', photoCounts[stage] > 0);
-    });
-    const pip = document.getElementById('pip-' + key);
+    ['sc-','esc-'].forEach(p => { const e = document.getElementById(p+key); if(e) e.innerText = photoCounts[stage]; });
+    ['sb-','esb-'].forEach(p => { const e = document.getElementById(p+key); if(e) e.classList.toggle('has-data', photoCounts[stage] > 0); });
+    const pip = document.getElementById('pip-'+key);
     if (pip) pip.classList.toggle('done', photoCounts[stage] > 0);
 }
 
 function renderThumbs() {
-    const row        = document.getElementById('thumb-row');
-    const total      = captures.length;
+    const row = document.getElementById('thumb-row');
+    const total = captures.length;
     const unassigned = captures.filter(c => !c.stage).length;
     document.getElementById('thumbCount').innerText = total > 0
-        ? `${total} photos${unassigned > 0 ? ` · ${unassigned} unassigned` : ' · all assigned ✓'}`
-        : '';
-
-    if (captures.length === 0) {
-        row.innerHTML = Array(5).fill(0).map(() => `<div class="thumb thumb-empty">+</div>`).join('');
-        return;
-    }
-
+        ? `${total} photos${unassigned > 0 ? ` · ${unassigned} unassigned` : ' · all assigned ✓'}` : '';
+    if (!total) { row.innerHTML = Array(5).fill(0).map(() => `<div class="thumb thumb-empty">+</div>`).join(''); return; }
     row.innerHTML = captures.map(c => `
         <div class="thumb" onclick="openEditor('${c.id}')">
             <img class="thumb-img" src="${c.dataUrl}">
-            <div class="thumb-badge ${c.stage ? '' : 'unassigned'}">${c.stage ? 'C' + c.stage : '?'}</div>
-            <div class="thumb-del" onclick="event.stopPropagation(); deleteCapture('${c.id}')">✕</div>
-        </div>
-    `).join('');
+            <div class="thumb-badge ${c.stage ? '' : 'unassigned'}">${c.stage ? 'C'+c.stage : '?'}</div>
+            <div class="thumb-del" onclick="event.stopPropagation();deleteCapture('${c.id}')">✕</div>
+        </div>`).join('');
 }
 
 function updateUploadBtn() {
     const ready = captures.filter(c => c.stage).length;
-    const btn   = document.getElementById('upload-btn');
+    const btn = document.getElementById('upload-btn');
     btn.classList.toggle('disabled', ready === 0);
-    btn.innerHTML = `<i class="bi bi-cloud-upload-fill"></i> Upload${ready > 0 ? ' (' + ready + ')' : ' All'}`;
+    btn.innerHTML = `<i class="bi bi-cloud-upload-fill"></i> Upload${ready > 0 ? ' ('+ready+')' : ' All'}`;
 }
 
 function setStatus(msg, type) {
-    const el      = document.getElementById('appStatus');
-    el.innerText  = msg;
-    el.className  = 'app-status ' + (type || '');
+    const el = document.getElementById('appStatus');
+    el.innerText = msg;
+    el.className = 'app-status ' + (type||'');
 }
 
 function showStats() {
-    const list        = document.getElementById('statsList');
-    const max         = Math.max(...STAGES.map(s => photoCounts[s]), 1);
-    const totalPhotos = STAGES.reduce((sum, s) => sum + photoCounts[s], 0);
-    const minCount    = Math.min(...STAGES.map(s => photoCounts[s]));
-    const needed      = Math.max(0, 200 - minCount);
-    list.innerHTML    = STAGES.map(s => `
+    const max = Math.max(...STAGES.map(s => photoCounts[s]), 1);
+    const total = STAGES.reduce((s, k) => s + photoCounts[k], 0);
+    const min = Math.min(...STAGES.map(s => photoCounts[s]));
+    document.getElementById('statsList').innerHTML = STAGES.map(s => `
         <div class="stats-row">
             <div class="stats-stage">C${s}</div>
             <div class="stats-bar-wrap"><div class="stats-bar" style="width:${Math.round((photoCounts[s]/max)*100)}%"></div></div>
             <div class="stats-count">${photoCounts[s]} photos</div>
-        </div>
-    `).join('');
-    document.getElementById('statsTotal').innerText = `Total: ${totalPhotos} · ${needed > 0 ? `Need ${needed} more per stage` : '✓ Ready to train!'}`;
+        </div>`).join('');
+    document.getElementById('statsTotal').innerText = `Total: ${total} · ${200-min > 0 ? `Need ${200-min} more per stage` : '✓ Ready to train!'}`;
     document.getElementById('stats-panel').classList.remove('hidden');
 }
 
-function hideStats() {
-    document.getElementById('stats-panel').classList.add('hidden');
-}
+function hideStats() { document.getElementById('stats-panel').classList.add('hidden'); }
 </script>
 </body>
 </html>
