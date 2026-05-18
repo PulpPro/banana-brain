@@ -439,17 +439,22 @@ function capturePhoto() {
     const vid     = document.getElementById('webcam');
     const camWrap = document.getElementById('cam-wrap');
 
-    const vidW  = vid.videoWidth  || vid.clientWidth;
-    const vidH  = vid.videoHeight || vid.clientHeight;
+    let vidW  = vid.videoWidth;
+    let vidH  = vid.videoHeight;
 
-    if (!vidW || !vidH) {
-        setStatus('Camera not ready — try again', 'err');
-        return;
-    }
+    if (!vidW || !vidH) { setStatus('Camera not ready — try again', 'err'); return; }
 
     const rect  = camWrap.getBoundingClientRect();
     const wrapW = rect.width  || camWrap.clientWidth;
     const wrapH = rect.height || camWrap.clientHeight;
+
+    // iPhone returns portrait video (1080x1920) even when displayed landscape.
+    // If video aspect ratio doesn't match display orientation, swap dimensions.
+    const videoIsPortrait  = vidH > vidW;
+    const displayIsLandscape = wrapW > wrapH;
+    if (videoIsPortrait && displayIsLandscape) {
+        [vidW, vidH] = [vidH, vidW];
+    }
 
     // object-fit: cover scale
     const scaleX = vidW / wrapW;
