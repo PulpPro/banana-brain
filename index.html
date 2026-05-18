@@ -439,74 +439,29 @@ function capturePhoto() {
     const vid     = document.getElementById('webcam');
     const camWrap = document.getElementById('cam-wrap');
 
-    let vidW  = vid.videoWidth;
-    let vidH  = vid.videoHeight;
+    // Draw video at display size — browser handles all orientation/rotation.
+    // Then crop the crosshair region from the display-scale canvas.
+    const wrapRect = camWrap.getBoundingClientRect();
+    const wrapW = wrapRect.width;
+    const wrapH = wrapRect.height;
 
-    if (!vidW || !vidH) { setStatus('Camera not ready — try again', 'err'); return; }
+    // Full frame at display resolution
+    const fullCanvas = document.createElement('canvas');
+    fullCanvas.width  = wrapW;
+    fullCanvas.height = wrapH;
+    fullCanvas.getContext('2d').drawImage(vid, 0, 0, wrapW, wrapH);
 
-    const rect  = camWrap.getBoundingClientRect();
-    const wrapW = rect.width  || camWrap.clientWidth;
-    const wrapH = rect.height || camWrap.clientHeight;
+    // Crosshair region in display pixels
+    const cx = Math.round(wrapW * CROP_X);
+    const cy = Math.round(wrapH * CROP_Y);
+    const cw = Math.round(wrapW * CROP_W);
+    const ch = Math.round(wrapH * CROP_H);
 
-    // iPhone returns portrait video (1080x1920) even when displayed landscape.
-    // If video aspect ratio doesn't match display orientation, swap dimensions.
-    const videoIsPortrait  = vidH > vidW;
-    const displayIsLandscape = wrapW > wrapH;
-    if (videoIsPortrait && displayIsLandscape) {
-        [vidW, vidH] = [vidH, vidW];
-    }
-
-    // object-fit: cover scale
-    const scaleX = vidW / wrapW;
-    const scaleY = vidH / wrapH;
-    const scale  = Math.max(scaleX, scaleY);
-
-    // With cover, one axis fits exactly, the other overflows.
-    // Overflow = how many VIDEO PIXELS are outside the visible area on each side.
-    const overflowX = Math.max(0, (vidW - wrapW * scale) / 2);
-    const overflowY = Math.max(0, (vidH - wrapH * scale) / 2);
-
-    // Crosshair in element pixels → source video pixels
-    const srcX = overflowX + (wrapW * CROP_X * scale);
-    const srcY = overflowY + (wrapH * CROP_Y * scale);
-    const srcW = wrapW * CROP_W * scale;
-    const srcH = wrapH * CROP_H * scale;
-
-    const x = Math.max(0, Math.round(srcX));
-    const y = Math.max(0, Math.round(srcY));
-    const w = Math.min(Math.round(srcW), vidW - x);
-    const h = Math.min(Math.round(srcH), vidH - y);
-
+    // Crop canvas
     const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-
-    if (videoIsPortrait && displayIsLandscape) {
-        // Sensor is portrait (1080x1920) but we calculated crop in landscape (1920x1080).
-        // We need to rotate the canvas 90° to draw correctly.
-        // Crop coords in landscape space → convert back to portrait sensor space:
-        // landscape (x,y,w,h) → portrait sensor: x_p = y, y_p = vidH_orig - x - w... 
-        // Simpler: draw full frame rotated, then crop.
-        const origW = vid.videoWidth;   // 1080 (portrait width)
-        const origH = vid.videoHeight;  // 1920 (portrait height)
-
-        // Draw the full video rotated 90° CW onto a landscape canvas
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width  = origH; // 1920
-        tempCanvas.height = origW; // 1080
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCtx.translate(origH / 2, origW / 2);
-        tempCtx.rotate(-Math.PI / 2);
-        tempCtx.drawImage(vid, -origW / 2, -origH / 2, origW, origH);
-
-        // Now crop from the rotated landscape canvas
-        canvas.width  = w;
-        canvas.height = h;
-        ctx.drawImage(tempCanvas, x, y, w, h, 0, 0, w, h);
-    } else {
-        canvas.width  = w;
-        canvas.height = h;
-        ctx.drawImage(vid, x, y, w, h, 0, 0, w, h);
-    }
+    canvas.width  = cw;
+    canvas.height = ch;
+    canvas.getContext('2d').drawImage(fullCanvas, cx, cy, cw, ch, 0, 0, cw, ch);
 
     canvas.toBlob(blob => {
         const id = 'cap_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
